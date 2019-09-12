@@ -87,7 +87,7 @@ CFLAGS         += -fno-pic -pipe
 # mon_backtrace()'s function prologue on gcc version: (Debian 4.7.2-5) 4.7.2
 EXTRA_CFLAGS   += -Wno-unused-but-set-variable -gstabs -fno-tree-ch
 
-GCC_LIB        := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
+GCC_LIB        := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name -m32)
 
 endif
 
