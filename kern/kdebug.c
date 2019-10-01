@@ -226,6 +226,42 @@ find_function(const char * const fname)
 	// const struct Stab *stabs = __STAB_BEGIN__, *stab_end = __STAB_END__;
 	// const char *stabstr = __STABSTR_BEGIN__, *stabstr_end = __STABSTR_END__;
 	//LAB 3: Your code here.
+	const struct Stab *stabs, *stab_end;
+	const char *stabstr, *stabstr_end;
+	size_t fn_namelen;
+
+	stabs = __STAB_BEGIN__;
+	stab_end = __STAB_END__;
+	stabstr = __STABSTR_BEGIN__;
+	stabstr_end = __STABSTR_END__;
+	
+	// Invalid STAB
+	if (stabstr_end <= stabstr || stabstr_end[-1] != 0)
+	{
+		return 0;
+	}
+
+	// Look up the corresponding STAB entry
+	for (; stabs < stab_end; stabs++)
+	{
+		if (stabs->n_type == N_FUN)
+		{
+			// STAB strings are not null-terminated, so
+			// we have to find out their length in order
+			// to be able to use strncmp().
+			// A function name in the STAB string table is 
+			// followed by a colon.
+			fn_namelen = strfind(stabstr + stabs->n_strx, ':') - 
+				(stabstr + stabs->n_strx);
+	
+			if (strlen(fname) == fn_namelen && 
+				!strncmp(fname, stabstr + stabs->n_strx,
+					fn_namelen))
+			{
+				return stabs->n_value;
+			}
+		}
+	}
 
 	return 0;
 }

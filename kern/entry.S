@@ -78,8 +78,8 @@ _generall_syscall:
 	popl ret_eip
 	movl %ebp, ebp_reg
 	movl %esp, esp_reg
-	movl $0x0,%ebp
-	movl $(bootstacktop),%esp
+	movl $0x0, %ebp
+	movl $(bootstacktop), %esp
 	pushl $GD_KD
 	pushl esp_reg
 	pushfl
@@ -118,6 +118,8 @@ sys_yield:
 .globl sys_exit
 .type  sys_exit, @function
 sys_exit:
+	xorl %ebp, %ebp
+	movl $(bootstacktop), %esp
 	call csys_exit
 	jmp .
 #endif

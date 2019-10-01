@@ -12,6 +12,7 @@
 #include <kern/monitor.h>
 #include <kern/sched.h>
 #include <kern/cpu.h>
+#include <kern/kdebug.h>
 
 struct Env env_array[NENV];
 struct Env *curenv = NULL;
@@ -120,8 +121,24 @@ void
 env_init(void)
 {
 	// Set up envs array
-	//LAB 3: Your code here.
+	// LAB 3: Your code here.
+	unsigned int i;
+
+	for (i = 0; i < NENV - 1; i++)
+	{
+		envs[i].env_id = 0;
+		envs[i].env_status = ENV_FREE;
+		envs[i].env_link = &envs[i + 1];
+	}
 	
+	// Assign NULL to the last env_link, so that env_alloc()
+	// can handle the E_NO_FREE_ENV situation properly.
+	envs[NENV - 1].env_id = 0;
+	envs[NENV - 1].env_status = ENV_FREE;
+	envs[NENV - 1].env_link = NULL;
+
+	// envs[0] is the first free env.
+	env_free_list = envs;
 	// Per-CPU part of the initialization
 	env_init_percpu();
 }
@@ -199,8 +216,9 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	e->env_tf.tf_es = GD_KD | 0;
 	e->env_tf.tf_ss = GD_KD | 0;
 	e->env_tf.tf_cs = GD_KT | 0;
-	//LAB 3: Your code here.
-	// e->env_tf.tf_esp = 0x210000;
+	// LAB 3: Your code here.
+	// Give each env its own stack of size 2 * PGSIZE
+	e->env_tf.tf_esp = 0x210000 + (e - envs) * (2 * PGSIZE);
 #else
 #endif
 	// You will set e->env_tf.tf_eip later.
@@ -217,8 +235,73 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 static void
 bind_functions(struct Env *e, struct Elf *elf)
 {
-	//find_function from kdebug.c should be used
-	//LAB 3: Your code here.
+	// find_function from kdebug.c should be used
+	// LAB 3: Your code here.
+	
+	struct Elf32_Sym *symtab, *esymtab;
+	struct Secthdr *sh, *esh;
+	char *strtab, *sect;
+	uintptr_t fn_ptr;
+
+	// The section header table is located at offset e_shoff from the 
+	// beginning of the ELF,
+	// and e_shnum holds the number of entries in the section header
+	// table.
+	sh = (struct Secthdr *) ((uint8_t *) elf + elf->e_shoff);
+	esh = sh + elf->e_shnum;
+	symtab = NULL;
+	esymtab = NULL;
+	strtab = NULL;
+	// As per the ELF specification, an object file may have only one
+	// SYMTAB section (though this restriction may be relaxed in the 
+	// future), and it may have multiple STRTAB sections. The tables 
+	// we are looking for are called '.symtab' and '.strtab'.
+	// sh[elf->e_shstrndx].sh_offset holds the offset of the area
+	// where the section names are located in the ELF, and each
+	// name is located at sh[elf->e_shstrndx].sh_offset + sh_name.
+	sect = (char *) ((uint8_t *) elf + sh[elf->e_shstrndx].sh_offset);
+
+	// Look up the symbol and symbol string tables.
+	for (; sh < esh; sh++)
+	{
+		if (sh->sh_type == ELF_SHT_SYMTAB /* &&
+			!strcmp(".symtab", sect + sh->sh_name) */)
+		{
+			// Store the SYMTAB bounds.
+			symtab = (struct Elf32_Sym *) ((uint8_t *) elf + 
+				sh->sh_offset);
+			esymtab = (struct Elf32_Sym *) ((uint8_t *) symtab +
+				sh->sh_size);
+		}
+		else if (sh->sh_type == ELF_SHT_STRTAB && 
+				!strcmp(".strtab", sect + sh->sh_name))
+		{
+			// Store the STRTAB beginning.
+			strtab = (char *) elf + sh->sh_offset;
+		}
+	}
+	
+	// Nothing to bind.
+	if (!symtab || !esymtab || !strtab)
+	{
+		return;
+	}
+	
+	for (; symtab < esymtab; symtab++)
+	{
+		// Assign each function's address to the corresponding
+		// global variable. 
+		// STB_GLOBAL == 1
+		if (ELF32_ST_BIND(symtab->st_info) == 1)
+		{
+			// st_name holds the index into the symbol string table.
+			if ((fn_ptr = find_function(strtab + symtab->st_name)))
+			{
+				// st_value holds the variable's address.
+				*((uint32_t *) symtab->st_value) = fn_ptr;
+			}
+		}
+	}
 
 	/*
 	*((int *) 0x00231008) = (int) &cprintf;
@@ -273,12 +356,44 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	//  You must also do something with the program's entry point,
 	//  to make sure that the environment starts executing there.
 	//  What?  (See env_run() and env_pop_tf() below.)
-
+	
 	//LAB 3: Your code here.
+	struct Proghdr *ph, *eph;
+	struct Elf *elfh;
+	
+	if ((elfh = (struct Elf *) binary)->e_magic != ELF_MAGIC)
+	{
+		panic("load_icode: Invalid ELF");
+	}
+
+	ph = (struct Proghdr *) ((uint8_t *) elfh + elfh->e_phoff);
+	eph = ph + elfh->e_phnum;
+
+	for (; ph < eph; ph++)
+	{
+		if (ph->p_type == ELF_PROG_LOAD)
+		{
+			if (ph->p_filesz > ph->p_memsz)
+			{
+				panic("load_icode: Invalid ELF header");
+			}
+
+			memmove((void *) ph->p_va, 
+				(void *) binary + ph->p_offset, 
+				(size_t) ph->p_memsz);
+			memset((void *) ph->p_va + ph->p_filesz, 0,
+				(size_t) (ph->p_memsz - ph->p_filesz));
+		}
+	}
+
+	// Store the program's entry point in the Trapframe's EIP,
+	// so that env_pop_tf() can load it into the actual EIP for
+	// the environment to start executing there.
+	e->env_tf.tf_eip = elfh->e_entry;
 	
 #ifdef CONFIG_KSPACE
 	// Uncomment this for task №5.
-	//bind_functions();
+	bind_functions(NULL, elfh);
 #endif
 }
 
@@ -293,6 +408,17 @@ void
 env_create(uint8_t *binary, size_t size, enum EnvType type)
 {
 	//LAB 3: Your code here.
+	int err_code;
+	struct Env *new_env;
+
+	// Allocation failure.
+	if ((err_code = env_alloc(&new_env, 0)))
+	{
+		panic("env_create: env_alloc: %i", err_code);
+	}
+
+	load_icode(new_env, binary, size);
+	new_env->env_type = type;
 }
 
 //
@@ -321,9 +447,15 @@ env_destroy(struct Env *e)
 	//LAB 3: Your code here.
 	env_free(e);
 
-	cprintf("Destroyed the only environment - nothing more to do!\n");
-	while (1)
-		monitor(NULL);
+	// Transfer the control to the scheduler.
+	if (e == curenv)
+	{
+		sched_yield();
+	}
+	
+	// cprintf("Destroyed the only environment - nothing more to do!\n");
+	// while (1)
+	//	monitor(NULL);
 }
 
 #ifdef CONFIG_KSPACE
@@ -419,8 +551,19 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 	//
 	//LAB 3: Your code here.
+	
+	if (e != curenv)
+	{
+		if (curenv && curenv->env_status == ENV_RUNNING)
+		{
+			curenv->env_status = ENV_RUNNABLE;
+		}
 
-
+		curenv = e;
+		curenv->env_status = ENV_RUNNING;
+		curenv->env_runs++;
+	}
+		
 	env_pop_tf(&e->env_tf);
 }
 
