@@ -380,7 +380,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 
 			memmove((void *) ph->p_va, 
 				(void *) binary + ph->p_offset, 
-				(size_t) ph->p_memsz);
+				(size_t) ph->p_filesz);
 			memset((void *) ph->p_va + ph->p_filesz, 0,
 				(size_t) (ph->p_memsz - ph->p_filesz));
 		}
