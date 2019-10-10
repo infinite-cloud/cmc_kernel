@@ -32,11 +32,19 @@ sched_yield(void)
 
 	curenv_idx = (curenv) ? ENVX(curenv->env_id) : 0;
 
-	for (i = curenv_idx; i < curenv_idx + NENV; i++)
+	for (i = curenv_idx; i < NENV; i++)
 	{
-		if (envs[i % NENV].env_status == ENV_RUNNABLE)
+		if (envs[i].env_status == ENV_RUNNABLE)
 		{
-			env_run(envs + (i % NENV));
+			env_run(envs + i);
+		}
+	}
+
+	for (i = 0; i < curenv_idx; i++)
+	{	
+		if (envs[i].env_status == ENV_RUNNABLE)
+		{
+			env_run(envs + i);
 		}
 	}
 
