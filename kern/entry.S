@@ -83,6 +83,8 @@ _generall_syscall:
 	pushl $GD_KD
 	pushl esp_reg
 	pushfl
+	# Guard to avoid hard to debug errors due to cli misusage.
+	orl $FL_IF, (%esp)
 	pushl $GD_KT
 	pushl ret_eip
 	pushl $0x0
