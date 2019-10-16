@@ -11,6 +11,12 @@ static Header base = { .s = { .next = (Header *) space, .prev = (Header *) space
 
 static Header *freep = NULL; /* start of free list */
 
+//static struct spinlock page_lock = {
+//	.locked = 0,
+//#ifdef DEBUG_SPINLOCK
+//	.name = "page_lock",
+//#endif
+//};
 
 static void check_list(void)
 {
@@ -36,6 +42,8 @@ test_alloc(uint8_t nbytes)
 
 	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
 
+//	spin_lock(&page_lock);
+
 	if (freep == NULL) { /* no free list yet */
 		((Header *) &space)->s.next = (Header *) &base;
 		((Header *) &space)->s.prev = (Header *) &base;
@@ -56,9 +64,12 @@ test_alloc(uint8_t nbytes)
 				p += p->s.size;
 				p->s.size = nunits;
 			}
+
+//			spin_unlock(&page_lock);
 			return (void *)(p + 1);
 		}
 		if (p == freep) { /* wrapped around free list */
+//			spin_unlock(&page_lock);
 			return NULL;
 		}
 	}
@@ -69,6 +80,9 @@ void
 test_free(void *ap)
 {
 	Header *bp, *p;
+
+//	spin_lock(&page_lock);
+
 	bp = (Header *) ap - 1; /* point to block header */
 
 	for (p = freep; !(bp > p && bp < p->s.next); p = p->s.next)
@@ -95,5 +109,6 @@ test_free(void *ap)
 	freep = p;
 
 	check_list();
+//	spin_lock(&page_lock);
 }
 

@@ -11,6 +11,10 @@
 #define TIMES 100
 
 unsigned long cpu_freq;
+
+static uint64_t tsc_start_value;
+static int8_t timer_status = 0;
+
 /*
  * This reads the current MSB of the PIT counter, and
  * checks if we are running on sufficiently fast and
@@ -165,17 +169,17 @@ success:
 
 void tsc_calibrate(void)
 {
-    int i;
-    for (i = 0; i < TIMES; i++) {
-        if ((cpu_freq = quick_pit_calibrate()))
-            break;
-    }
-    if (i == TIMES) {
-        cpu_freq = DEFAULT_FREQ;
-        cprintf("Can't calibrate pit timer. Using default frequency\n");
-    }
+	int i;
+	for (i = 0; i < TIMES; i++) {
+		if ((cpu_freq = quick_pit_calibrate()))
+			break;
+	}
+	if (i == TIMES) {
+		cpu_freq = DEFAULT_FREQ;
+		cprintf("Can't calibrate pit timer. Using default frequency\n");
+	}
 
-    cprintf("Detected %lu.%03lu MHz processor.\n",
+	cprintf("Detected %lu.%03lu MHz processor.\n",
 		(unsigned long)cpu_freq / 1000,
 		(unsigned long)cpu_freq % 1000);
 }
@@ -195,9 +199,21 @@ void print_timer_error(void)
 //Use print_timer_error function to print error.
 void timer_start(void)
 {
+	timer_status = 1;
+	tsc_start_value = read_tsc();
 }
 
 void timer_stop(void)
 {
+	if (timer_status != 1)
+	{
+		print_timer_error();
+		return;
+	}
+
+	timer_status = 0;
+	
+	// The CPU frequency stored in cpu_freq is measured in KHz
+	print_time((read_tsc() - tsc_start_value) / (cpu_freq * 1000));
 }
 
