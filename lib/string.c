@@ -125,7 +125,7 @@ memset(void *v, int c, size_t n)
 		return v;
 	if ((int)v%4 == 0 && n%4 == 0) {
 		c &= 0xFF;
-		c = (c<<24)|(c<<16)|(c<<8)|c;
+		c = ((unsigned)c<<24U)|((unsigned)c<<16U)|((unsigned)c<<8U)|(unsigned)c;
 		asm volatile("cld; rep stosl\n"
 			:: "D" (v), "a" (c), "c" (n/4)
 			: "cc", "memory");
