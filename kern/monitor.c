@@ -30,6 +30,7 @@ static struct Command commands[] = {
 	{ "backtrace", "Display the backtrace", mon_backtrace },
 	{ "timer_start", "Start the timer", mon_timer_start },
 	{ "timer_stop", "Stop the timer", mon_timer_stop },
+	{ "lppage", "Display the physical page list", mon_lppage }
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -119,6 +120,35 @@ int
 mon_timer_stop(int argc, char **argv, struct Trapframe *tf)
 {
 	timer_stop();
+
+	return 0;
+}
+
+int
+mon_lppage(int argc, char **argv, struct Trapframe *tf)
+{
+	int i, block_free;
+
+	block_free = is_pagefree(&pages[0]);
+
+	for (i = 1; i <= npages; i++)
+	{
+		cprintf("%d", i);
+		
+		if (i < npages && (is_pagefree(&pages[i]) == block_free))
+		{
+			for (; i < npages && (is_pagefree(&pages[i]) ==
+				block_free); i++)
+			{
+				;
+			}
+
+			cprintf("..%d", i);
+		}
+
+		cprintf(block_free ? " FREE\n" : " ALLOCATED\n");
+		block_free = !block_free;
+	}
 
 	return 0;
 }
