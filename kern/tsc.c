@@ -126,8 +126,9 @@ static unsigned long quick_pit_calibrate(void)
 			 * Iterate until the error is less than 500 ppm
 			 */
 			delta -= tsc;
-			if (d1+d2 >= delta >> 11)
-				continue;
+
+	//		if (d1+d2 >= delta >> 11)
+	//			continue;
 
 			/*
 			 * Check the PIT one more time to verify that
