@@ -593,6 +593,22 @@ check_page_alloc(void)
 		--nfree;
 	assert(nfree == 0);
 
+	struct PageInfo *alc = page_alloc(0), *store = alc;
+
+	while ((alc = page_alloc(0)))
+	{
+		if (PGNUM(PADDR(page2kva(alc))) > PGNUM(PADDR(page2kva(store))))
+		{
+			store = alc;
+		}
+	}
+
+	page_free(store);
+	alc = page_alloc(0);
+	page_free(alc);
+
+	assert(false);
+
 	cprintf("check_page_alloc() succeeded!\n");
 }
 
