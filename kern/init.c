@@ -18,12 +18,13 @@
 void
 i386_init(void)
 {
+	size_t i;
 	extern char edata[], end[];
 
 	// Before doing anything else, complete the ELF loading process.
 	// Clear the uninitialized global data (BSS) section of our program.
 	// This ensures that all static/global variables start out zero.
-	for (size_t i = 0; i < end - edata; i++)
+	for (i = 0; i < end - edata; i++)
 		edata[i] = 0;
 
 	// Perform global constructor initialisation (e.g. asan)
