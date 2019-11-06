@@ -53,6 +53,7 @@ i386_init(void)
 
 	// user environment initialization functions
 	env_init();
+	trap_init();
 
 	clock_idt_init();
 
@@ -63,12 +64,20 @@ i386_init(void)
 
 #ifdef CONFIG_KSPACE
 	// Touch all you want.
-	//ENV_CREATE_KERNEL_TYPE(prog_test1);
-	//ENV_CREATE_KERNEL_TYPE(prog_test2);
-	//ENV_CREATE_KERNEL_TYPE(prog_test3);
-	//ENV_CREATE_KERNEL_TYPE(prog_test4);
-	//ENV_CREATE_KERNEL_TYPE(prog_test5);
-	//ENV_CREATE_KERNEL_TYPE(prog_test6);
+	ENV_CREATE_KERNEL_TYPE(prog_test1);
+	ENV_CREATE_KERNEL_TYPE(prog_test2);
+	ENV_CREATE_KERNEL_TYPE(prog_test3);
+	ENV_CREATE_KERNEL_TYPE(prog_test4);
+	ENV_CREATE_KERNEL_TYPE(prog_test5);
+	ENV_CREATE_KERNEL_TYPE(prog_test6);
+#else
+#if defined(TEST)
+	// Don't touch -- used by grading script!
+	ENV_CREATE(TEST, ENV_TYPE_USER);
+#else
+	// Touch all you want.
+	ENV_CREATE(user_hello, ENV_TYPE_USER);
+#endif // TEST*
 #endif
 
 	// Schedule and run the first user environment!

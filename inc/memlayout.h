@@ -98,7 +98,8 @@
 
 // Kernel stack.
 #define KSTACKTOP	KERNBASE
-#define KSTKSIZE       (8*PGSIZE)              // size of a kernel stack
+#define KSTKSIZE	(8*PGSIZE)   		// size of a kernel stack
+#define KSTKGAP		(8*PGSIZE)   		// size of a kernel stack guard
 
 // Memory-mapped IO.
 #define MMIOLIM		(KSTACKTOP - PTSIZE)
@@ -126,11 +127,26 @@
 #define UTOP		UENVS
 // Top of one-page user exception stack
 #define UXSTACKTOP	UTOP
-// Stack size
-#define USTACKSIZE	(2*PGSIZE)
-// Next page left invalid to guard against exception stack overflow; then:
+// Size of exception stack (must be one page for now)
+#define UXSTACKSIZE PGSIZE
 // Top of normal user stack
-#define USTACKTOP	(UTOP - USTACKSIZE - PGSIZE)
+// Next page left invalid to guard against exception stack overflow; then:
+#define USTACKTOP	(UTOP - USTACKSIZE - UXSTACKSIZE - PGSIZE)
+// Stack size (variable)
+#define USTACKSIZE  (2*PGSIZE)
+// Max number of open files in the file system at once
+#define MAXOPEN		1024
+#define FILEVA		0xD0000000
+
+#ifdef SANITIZE_USER_SHADOW_OFF
+// User stack and some other tables are located at higher addresses, so we need to map a separate shadow for it.
+#define SANITIZE_USER_EXTRA_SHADOW_BASE ((((USTACKTOP - USTACKSIZE) >> 3) + SANITIZE_USER_SHADOW_OFF) & ~(PGSIZE-1))
+#define SANITIZE_USER_EXTRA_SHADOW_SIZE ((ULIM - USTACKTOP - USTACKSIZE) >> 3)
+
+// File system is located at another specific address space
+#define SANITIZE_USER_FS_SHADOW_BASE ((FILEVA >> 3) + SANITIZE_USER_SHADOW_OFF)
+#define SANITIZE_USER_FS_SHADOW_SIZE ((((MAXOPEN * PGSIZE) >> 3) + (PGSIZE - 1)) & ~(PGSIZE-1))
+#endif
 
 // Where user programs generally begin
 #define UTEXT		(2*PTSIZE)
