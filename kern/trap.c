@@ -75,6 +75,45 @@ trap_init(void)
 //	extern struct Segdesc gdt[];
 
 	// LAB 8: Your code here.
+	void divide_thdlr();
+	void debug_thdlr();
+	void nmi_thdlr();
+	void brkpt_thdlr();
+	void oflow_thdlr();
+	void bound_thdlr();
+	void illop_thdlr();
+	void device_thdlr();
+	void dblflt_thdlr();
+	void tss_thdlr();
+	void segnp_thdlr();
+	void stack_thdlr();
+	void gpflt_thdlr();
+	void pgflt_thdlr();
+	void fperr_thdlr();
+	void align_thdlr();
+	void mchk_thdlr();
+	void simderr_thdlr();
+	void syscall_thdlr();
+
+	SETGATE(idt[T_DIVIDE], 0, GD_KT, &divide_thdlr, 0);
+	SETGATE(idt[T_DEBUG], 0, GD_KT, &debug_thdlr, 0);
+	SETGATE(idt[T_NMI], 0, GD_KT, &nmi_thdlr, 0);
+	SETGATE(idt[T_BRKPT], 0, GD_KT, &brkpt_thdlr, 3);
+	SETGATE(idt[T_OFLOW], 0, GD_KT, &oflow_thdlr, 0);
+	SETGATE(idt[T_BOUND], 0, GD_KT, &bound_thdlr, 0);
+	SETGATE(idt[T_ILLOP], 0, GD_KT, &illop_thdlr, 0);
+	SETGATE(idt[T_DEVICE], 0, GD_KT, &device_thdlr, 0);
+	SETGATE(idt[T_DBLFLT], 0, GD_KT, &dblflt_thdlr, 0);
+	SETGATE(idt[T_TSS], 0, GD_KT, &tss_thdlr, 0);
+	SETGATE(idt[T_SEGNP], 0, GD_KT, &segnp_thdlr, 0);
+	SETGATE(idt[T_STACK], 0, GD_KT, &stack_thdlr, 0);
+	SETGATE(idt[T_GPFLT], 0, GD_KT, &gpflt_thdlr, 0);
+	SETGATE(idt[T_PGFLT], 0, GD_KT, &pgflt_thdlr, 0);
+	SETGATE(idt[T_FPERR], 0, GD_KT, &fperr_thdlr, 0);
+	SETGATE(idt[T_ALIGN], 0, GD_KT, &align_thdlr, 0);
+	SETGATE(idt[T_MCHK], 0, GD_KT, &mchk_thdlr, 0);
+	SETGATE(idt[T_SIMDERR], 0, GD_KT, &simderr_thdlr, 0);
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, &syscall_thdlr, 3);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -162,18 +201,40 @@ static void
 trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
+	if (tf->tf_trapno == T_PGFLT)
+	{
+		page_fault_handler(tf);
+		return;
+	}
+
+	if (tf->tf_trapno == T_SYSCALL)
+	{
+		tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax,
+			tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx,
+			tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi,
+			tf->tf_regs.reg_esi);
+		return;
+	}
+
+	if (tf->tf_trapno == T_BRKPT)
+	{
+		monitor(tf);
+		return;
+	}
 
 	// Handle spurious interrupts
 	// The hardware sometimes raises these because of noise on the
 	// IRQ line or other reasons. We don't care.
 	//
-	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS)
+	{
 		cprintf("Spurious interrupt on irq 7\n");
 		print_trapframe(tf);
 		return;
 	}
 
-	if (tf->tf_trapno == IRQ_OFFSET + IRQ_CLOCK) {
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_CLOCK)
+	{
 		rtc_check_status();
 		pic_send_eoi(IRQ_CLOCK);
 		sched_yield();
@@ -181,9 +242,13 @@ trap_dispatch(struct Trapframe *tf)
 	}
 
 	print_trapframe(tf);
-	if (tf->tf_cs == GD_KT) {
+
+	if (tf->tf_cs == GD_KT)
+	{
 		panic("unhandled trap in kernel");
-	} else {
+	}
+	else
+	{
 		env_destroy(curenv);
 	}
 }
@@ -253,6 +318,13 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 8: Your code here.
+	// The current privilege level (CPL) is stored in the lowest two
+	// bits of CS.
+	// !(CS & 0x3) == not in the user mode.
+	if (!(tf->tf_cs & 0x3))
+	{
+		panic("page_fault_handler: kernel mode: page fault");
+	}
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.

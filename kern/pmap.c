@@ -27,6 +27,10 @@ struct PageInfo *pages;		// Physical page state array
 static struct PageInfo *page_free_list;	// Free list of physical pages
 struct PageInfo *page_free_list_top;
 
+// This variable is used by user_mem_assert() and
+// user_mem_check()
+static uintptr_t invalid_user_va;
+
 // --------------------------------------------------------------
 // Detect machine's physical memory setup.
 // --------------------------------------------------------------
@@ -179,6 +183,9 @@ mem_init(void)
 	//////////////////////////////////////////////////////////////////////
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
 	// LAB 8: Your code here.
+	envs = (struct Env *)
+		boot_alloc(NENV * sizeof(struct Env));
+	memset(envs, 0, NENV * sizeof(struct Env));
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
@@ -202,7 +209,8 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
-	boot_map_region(kern_pgdir, UPAGES, PTSIZE, 
+	boot_map_region(kern_pgdir, UPAGES, 
+		ROUNDUP(npages * sizeof(struct PageInfo), PGSIZE), 
 		PADDR(pages), PTE_U | PTE_P);
 
 	//////////////////////////////////////////////////////////////////////
@@ -212,6 +220,9 @@ mem_init(void)
 	//    - the new image at UENVS  -- kernel R, user R
 	//    - envs itself -- kernel RW, user NONE
 	// LAB 8: Your code here.
+	boot_map_region(kern_pgdir, UENVS, 
+		ROUNDUP(NENV * sizeof(struct Env), PGSIZE), 
+		PADDR(envs), PTE_U | PTE_P);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -235,7 +246,8 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
-	boot_map_region(kern_pgdir, KERNBASE, (1ULL << 32) - KERNBASE, 
+	boot_map_region(kern_pgdir, KERNBASE, 
+		ROUNDUP((1ULL << 32) - KERNBASE, PGSIZE), 
 		0, PTE_W | PTE_P);
 
 	// Check that the initial page directory has been set up correctly.
@@ -463,7 +475,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 		}
 
 		p->pp_ref++;
-		*pde = (pde_t) page2pa(p) | PTE_P | PTE_W | PTE_U;
+		*pde = (pde_t) (page2pa(p) | PTE_P | PTE_W | PTE_U);
 	}
 
 	return (pte_t *) KADDR(PTE_ADDR(*pde)) + PTX(va);
@@ -547,7 +559,7 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 		page_remove(pgdir, va);
 	}
 
-	*pte = page2pa(pp) | PTE_P | perm;
+	*pte = (pte_t) (page2pa(pp) | PTE_P | perm);
 
 	return 0;
 }
@@ -631,6 +643,65 @@ tlb_invalidate(pde_t *pgdir, void *va)
 	invlpg(va);
 }
 
+// --------------------------------------------------------------
+// Checking user memory.
+// --------------------------------------------------------------
+
+//
+// Checks that environment 'env' is allowed to access the range
+// of memory [va, va+len) with permissions 'perm | PTE_U | PTE_P'.
+// If it can, then the function simply returns.
+// If it cannot, 'env' is destroyed and, if env is the current
+// environment, this function will not return.
+//
+void
+user_mem_assert(struct Env *env, const void *va, size_t len, int perm)
+{
+	if (!user_mem_check(env, va, len, perm | PTE_U | PTE_P))
+	{
+		return;
+	}
+
+	cprintf("[%08x] user_mem_check assertion failure for va %08x\n",
+		env->env_id, invalid_user_va);
+	env_destroy(env);
+}
+
+int
+user_mem_check(struct Env *env, const void *va, size_t len, int perm)
+{
+	void *va_bottom, *va_top;
+	pte_t *pte;
+
+	va_bottom = ROUNDDOWN((void *) va, PGSIZE);
+	va_top = ROUNDUP((void *) va + len, PGSIZE);
+
+	// User program cannot access memory above UTOP.
+	if (va_bottom >= (void *) ULIM || va_top > (void *) ULIM)
+	{
+		// va_bottom < va <=>
+		// 	va_bottom == ROUNDDOWN((void *) va, PGSIZE)
+		invalid_user_va = (uintptr_t)
+			((va_bottom < va) ? va : va_bottom);
+		return -E_FAULT;
+	}
+
+	for (; va_bottom < va_top; va_bottom += PGSIZE)
+	{
+		pte = pgdir_walk(env->env_pgdir, va_bottom, 0);
+
+		// *pte should have at least perm permissions.
+		if (!pte || !(*pte) || (*pte & perm) != perm)
+		{
+			invalid_user_va = (uintptr_t)
+				((va_bottom < va) ? va : va_bottom);
+
+			return -E_FAULT;
+		}
+	}
+
+	return 0;
+}
 
 // --------------------------------------------------------------
 // Checking functions.
@@ -815,6 +886,10 @@ check_kern_pgdir(void)
 	for (i = 0; i < n; i += PGSIZE)
 		assert(check_va2pa(pgdir, UPAGES + i) == PADDR(pages) + i);
 
+	// check envs array
+	n = ROUNDUP(NENV * sizeof(struct PageInfo), PGSIZE);
+	for (i = 0; i < n; i += PGSIZE)
+		assert(check_va2pa(pgdir, UPAGES + i) == PADDR(pages + i));
 
 	// check phys mem
 	for (i = 0; i < npages * PGSIZE; i += PGSIZE)
@@ -831,6 +906,7 @@ check_kern_pgdir(void)
 		case PDX(UVPT):
 		case PDX(KSTACKTOP-1):
 		case PDX(UPAGES):
+		case PDX(UENVS):
 			assert(pgdir[i] & PTE_P);
 			break;
 		default:

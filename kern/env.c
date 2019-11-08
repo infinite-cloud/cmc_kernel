@@ -206,6 +206,9 @@ env_setup_vm(struct Env *e)
 	//    - The functions in kern/pmap.h are handy.
 
 	// LAB 8: Your code here.
+	p->pp_ref++;
+	e->env_pgdir = (pde_t *) page2kva(p);
+	memcpy(e->env_pgdir, kern_pgdir, PGSIZE);
 
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
@@ -312,6 +315,29 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   'va' and 'len' values that are not page-aligned.
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
+	void *va_bottom, *va_top;
+	struct PageInfo *p;
+
+	va_bottom = ROUNDDOWN(va, PGSIZE);
+	va_top = ROUNDUP(va + len, PGSIZE);
+
+	if (va_top > (void *) UTOP)
+	{
+		panic("region_alloc: cannot allocate memory above UTOP");
+	}
+
+	for (; va_bottom < va_top; va_bottom += PGSIZE)
+	{
+		if (!(p = page_alloc(0)))
+		{
+			panic("region_alloc: page_alloc failure");
+		}
+
+		if (page_insert(e->env_pgdir, p, va_bottom, PTE_U | PTE_W))
+		{
+			panic("region_alloc: page_insert failure");
+		}
+	}
 }
 
 #ifdef CONFIG_KSPACE
@@ -460,6 +486,9 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 		panic("load_icode: Invalid ELF");
 	}
 
+	// Switch to the env's address space
+	lcr3(PADDR(e->env_pgdir));
+
 	ph = (struct Proghdr *) ((uint8_t *) elfh + elfh->e_phoff);
 	eph = ph + elfh->e_phnum;
 
@@ -472,6 +501,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 				panic("load_icode: Invalid ELF header");
 			}
 
+			region_alloc(e, (void *) ph->p_va, ph->p_memsz);
 			memmove((void *) ph->p_va, 
 				(void *) binary + ph->p_offset, 
 				(size_t) ph->p_filesz);
@@ -492,6 +522,9 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	// Now map USTACKSIZE for the program's initial stack
 	// at virtual address USTACKTOP - USTACKSIZE.
 	// LAB 8: Your code here.
+	region_alloc(e, (void *) (USTACKTOP -  PGSIZE), PGSIZE);
+	// Switch back to the kernel's address space
+	lcr3(PADDR(kern_pgdir));
 
 #ifdef SANITIZE_USER_SHADOW_BASE
 	region_alloc(e, (void *) SANITIZE_USER_SHADOW_BASE, SANITIZE_USER_SHADOW_SIZE);
@@ -719,9 +752,9 @@ env_run(struct Env *e)
 		curenv->env_status = ENV_RUNNING;
 		curenv->env_runs++;
 	}
-		
-	//LAB 8: Your code here.
 
+	//LAB 8: Your code here.
+	lcr3(PADDR(e->env_pgdir));
 	env_pop_tf(&e->env_tf);
 }
 
