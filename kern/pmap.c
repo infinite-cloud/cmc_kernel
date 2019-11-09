@@ -55,13 +55,18 @@ i386_detect_memory(void)
 
 	// Calculate the number of physical pages available in both base
 	// and extended memory.
-	if (npages_pextmem && npages_extmem > 0x1000 /* &&
-		(0x1000 + npages_pextmem) <= (EXTPHYSMEM / PGSIZE) */)
+	if (npages_pextmem && npages_extmem > 0x1000)
 		npages = 0x1000 + npages_pextmem;
 	else if (npages_extmem)
 		npages = (EXTPHYSMEM / PGSIZE) + npages_extmem;
 	else
 		npages = npages_basemem;
+
+	// JOS can only support up to 512 Mb of physical memory
+	if (npages * PGSIZE > 512 * 1024 * 1024)
+	{
+		npages = 512 * 1024 * 1024 / PGSIZE;
+	}
 
 	cprintf("Physical memory: %uK available, base = %uK, extended = %uK, pextended = %uK\n",
 		npages * PGSIZE / 1024,
