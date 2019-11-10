@@ -501,7 +501,8 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 				panic("load_icode: Invalid ELF header");
 			}
 
-			region_alloc(e, (void *) ph->p_va, ph->p_memsz);
+			region_alloc(e, (void *) ph->p_va, 
+				(size_t) ph->p_memsz);
 			memmove((void *) ph->p_va, 
 				(void *) binary + ph->p_offset, 
 				(size_t) ph->p_filesz);
@@ -522,7 +523,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	// Now map USTACKSIZE for the program's initial stack
 	// at virtual address USTACKTOP - USTACKSIZE.
 	// LAB 8: Your code here.
-	region_alloc(e, (void *) (USTACKTOP -  PGSIZE), PGSIZE);
+	region_alloc(e, (void *) (USTACKTOP - USTACKSIZE), USTACKSIZE);
 	// Switch back to the kernel's address space
 	lcr3(PADDR(kern_pgdir));
 
