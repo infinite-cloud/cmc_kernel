@@ -321,7 +321,7 @@ region_alloc(struct Env *e, void *va, size_t len)
 	va_bottom = ROUNDDOWN(va, PGSIZE);
 	va_top = ROUNDUP(va + len, PGSIZE);
 
-	if (va_top > (void *) UTOP)
+	if (va_bottom >= (void *) UTOP || va_top > (void *) UTOP)
 	{
 		panic("region_alloc: cannot allocate memory above UTOP");
 	}
