@@ -675,14 +675,14 @@ user_mem_assert(struct Env *env, const void *va, size_t len, int perm)
 int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
-	void *va_bottom, *va_top;
+	const void *va_bottom, *va_top;
 	pte_t *pte;
 
-	va_bottom = ROUNDDOWN((void *) va, PGSIZE);
-	va_top = ROUNDUP((void *) va + len, PGSIZE);
+	va_bottom = ROUNDDOWN(va, PGSIZE);
+	va_top = ROUNDUP(va + len, PGSIZE);
 
-	// User program cannot access memory above UTOP.
-	if (va_bottom >= (void *) ULIM || va_top > (void *) ULIM)
+	// User program cannot access memory above ULIM.
+	if (va_bottom >= (const void *) ULIM || va_top > (const void *) ULIM)
 	{
 		// va_bottom < va <=>
 		// 	va_bottom == ROUNDDOWN((void *) va, PGSIZE)
