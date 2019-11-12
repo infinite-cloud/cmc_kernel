@@ -122,6 +122,6 @@ clock_thdlr:
 	call trap
 	jmp .
 #else
-clock_thdlr:
-    jmp .
+TRAPHANDLER_NOEC(clock_thdlr, IRQ_OFFSET + IRQ_CLOCK)
+// LAB 8: Your code here.
 #endif
