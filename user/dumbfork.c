@@ -32,7 +32,11 @@ duppage(envid_t dstenv, void *addr)
 		panic("sys_page_alloc: %i", r);
 	if ((r = sys_page_map(dstenv, addr, 0, UTEMP, PTE_P|PTE_U|PTE_W)) < 0)
 		panic("sys_page_map: %i", r);
+#ifdef SANITIZE_USER_SHADOW_BASE
+	__nosan_memcpy(UTEMP, addr, PGSIZE);
+#else
 	memmove(UTEMP, addr, PGSIZE);
+#endif
 	if ((r = sys_page_unmap(0, UTEMP)) < 0)
 		panic("sys_page_unmap: %i", r);
 }
@@ -66,10 +70,52 @@ dumbfork(void)
 	// Eagerly copy our entire address space into the child.
 	// This is NOT what you should do in your fork implementation.
 	for (addr = (uint8_t*) UTEXT; addr < end; addr += PGSIZE)
+	{
+#ifdef SANITIZE_USER_SHADOW_BASE
+		if ((uintptr_t) addr >= SANITIZE_USER_SHADOW_BASE &&
+			(uintptr_t) addr <= SANITIZE_USER_SHADOW_BASE +
+			SANITIZE_USER_SHADOW_SIZE)	
+		{
+			continue;
+		}
+
+		if ((uintptr_t) addr >= SANITIZE_USER_EXTRA_SHADOW_BASE &&
+			 (uintptr_t) addr <= SANITIZE_USER_EXTRA_SHADOW_BASE +
+			 SANITIZE_USER_EXTRA_SHADOW_SIZE)
+		{
+			continue;
+		}
+
+		if ((uintptr_t) addr >= SANITIZE_USER_FS_SHADOW_BASE &&
+			 (uintptr_t) addr <= SANITIZE_USER_FS_SHADOW_BASE +
+			 SANITIZE_USER_FS_SHADOW_SIZE)
+		{
+			continue;
+		}
+#endif
 		duppage(envid, addr);
+	}
 
 	// Also copy the stack we are currently running on.
 	duppage(envid, ROUNDDOWN(&addr, PGSIZE));
+
+#ifdef SANITIZE_USER_SHADOW_BASE
+	for (addr = (uint8_t *) SANITIZE_USER_SHADOW_BASE;
+		(uintptr_t) addr < SANITIZE_USER_SHADOW_BASE +
+		SANITIZE_USER_SHADOW_SIZE; addr += PGSIZE)
+		if (sys_page_alloc(envid, (void *) addr, PTE_P | PTE_U | PTE_W))
+			panic("Fork: failed to alloc shadow base page");
+	for (addr = (uint8_t *) SANITIZE_USER_EXTRA_SHADOW_BASE;
+		(uintptr_t) addr < SANITIZE_USER_EXTRA_SHADOW_BASE +
+		SANITIZE_USER_EXTRA_SHADOW_SIZE; addr += PGSIZE)
+		if (sys_page_alloc(envid, (void *) addr, PTE_P | PTE_U | PTE_W))
+			panic("Fork: failed to alloc shadow extra base page");
+	for (addr = (uint8_t *) SANITIZE_USER_FS_SHADOW_BASE;
+		(uintptr_t) addr < SANITIZE_USER_FS_SHADOW_BASE +
+		SANITIZE_USER_FS_SHADOW_SIZE; addr += PGSIZE)
+		if (sys_page_alloc(envid, (void *) addr, PTE_P | PTE_U | PTE_W))
+			panic("Fork: failed to alloc shadow fs base page");
+#endif
 
 	// Start the child environment running
 	if ((r = sys_env_set_status(envid, ENV_RUNNABLE)) < 0)

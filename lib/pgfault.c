@@ -24,10 +24,26 @@ void (*_pgfault_handler)(struct UTrapframe *utf);
 void
 set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
 {
+	int err;
+
 	if (_pgfault_handler == 0) {
 		// First time through!
 		// LAB 9: Your code here.
-		panic("set_pgfault_handler not implemented");
+		// Allocate an exception stack.
+		if ((err = sys_page_alloc(thisenv->env_id, 
+			(void *) (UXSTACKTOP - PGSIZE), 
+			PTE_W | PTE_U | PTE_P)) < 0)
+		{
+			panic("set_pgfault_handler: sys_page_alloc: %i", err);
+		}
+
+		// Set up the handler.
+		if ((err = sys_env_set_pgfault_upcall(thisenv->env_id, 
+			_pgfault_upcall)) < 0)
+		{
+			panic("set_pgfault_handler: sys_page_alloc: %i", err);
+		}
+		//panic("set_pgfault_handler not implemented");
 	}
 
 	// Save handler pointer for assembly to call.
