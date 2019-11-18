@@ -434,7 +434,7 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 9: Your code here.
-	if (dstva < (void *) UTOP && !PGOFF(dstva))
+	if (dstva < (void *) UTOP && PGOFF(dstva))
 	{
 		return -E_INVAL;
 	}
