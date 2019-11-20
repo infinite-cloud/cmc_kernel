@@ -30,9 +30,15 @@ bool
 block_is_free(uint32_t blockno)
 {
 	if (super == 0 || blockno >= super->s_nblocks)
+	{
 		return 0;
-	if (bitmap[blockno / 32] & (1 << (blockno % 32)))
+	}
+
+	if (bitmap[blockno >> 5] & (1UL << (blockno & ((1UL << 5) - 1))))
+	{
 		return 1;
+	}
+
 	return 0;
 }
 
@@ -42,8 +48,11 @@ free_block(uint32_t blockno)
 {
 	// Blockno zero is the null pointer of block numbers.
 	if (blockno == 0)
+	{
 		panic("attempt to free zero block");
-	bitmap[blockno/32] |= 1<<(blockno%32);
+	}
+
+	bitmap[blockno >> 5] |= 1UL << (blockno & ((1UL << 5) - 1));
 }
 
 // Search the bitmap for a free block and allocate it.  When you
