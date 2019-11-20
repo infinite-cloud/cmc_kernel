@@ -184,7 +184,8 @@ serve_set_size(envid_t envid, struct Fsreq_set_size *req)
 	int r;
 
 	if (debug)
-		cprintf("serve_set_size %08x %08x %08x\n", envid, req->req_fileid, req->req_size);
+		cprintf("serve_set_size %08x %08x %08x\n", envid,
+			req->req_fileid, req->req_size);
 
 	// Every file system IPC call has the same general structure.
 	// Here's how it goes.
@@ -207,13 +208,32 @@ int
 serve_read(envid_t envid, union Fsipc *ipc)
 {
 	struct Fsreq_read *req = &ipc->read;
-	//struct Fsret_read *ret = &ipc->readRet;
+	struct Fsret_read *ret = &ipc->readRet;
+	struct OpenFile *of;
+	ssize_t err;
 
 	if (debug)
-		cprintf("serve_read %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
+	{
+		cprintf("serve_read %08x %08x %08x\n", envid, req->req_fileid,
+				req->req_n);
+	}
 
 	// Lab 10: Your code here:
-	return 0;
+	// Find the relevant open file.
+	if ((err = openfile_lookup(envid, req->req_fileid, &of)) < 0)
+	{
+		return err;
+	}
+
+	// Read req_n bytes.
+	// On success, file_read() returns the nubmer of bytes read.
+	if ((err = file_read(of->o_file, ret->ret_buf, req->req_n,
+		of->o_fd->fd_offset)) > 0)
+	{
+		of->o_fd->fd_offset += err;
+	}
+
+	return err;
 }
 
 
@@ -224,11 +244,32 @@ serve_read(envid_t envid, union Fsipc *ipc)
 int
 serve_write(envid_t envid, struct Fsreq_write *req)
 {
+	struct OpenFile *of;
+	ssize_t err;
+
 	if (debug)
-		cprintf("serve_write %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
+	{
+		cprintf("serve_write %08x %08x %08x\n", envid, req->req_fileid,
+			req->req_n);
+	}
 
 	// LAB 10: Your code here.
-	panic("serve_write not implemented");
+	// Find the relevant file.
+	if ((err = openfile_lookup(envid, req->req_fileid, &of)) < 0)
+	{
+		return err;
+	}
+
+	// Write req_n bytes.
+	// On success, file_write() returns the number of bytes written.
+	if ((err = file_write(of->o_file, req->req_buf, req->req_n,
+			of->o_fd->fd_offset)) > 0)
+	{
+		of->o_fd->fd_offset += err;
+	}
+
+	// panic("serve_write not implemented");
+	return err;
 }
 
 // Stat ipc->stat.req_fileid.  Return the file's struct Stat to the

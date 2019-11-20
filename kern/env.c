@@ -568,6 +568,14 @@ env_create(uint8_t *binary, size_t size, enum EnvType type)
 
 	// If this is the file server (type == ENV_TYPE_FS) give it I/O privileges.
 	// LAB 10: Your code here.
+	if (type == ENV_TYPE_FS)
+	{
+		// The eflags register will be saved automatically
+		// when JOS switches context, so nothing else needs
+		// to be done to ensure that the privilege level will
+		// be restored properly
+		new_env->env_tf.tf_eflags |= FL_IOPL_MASK;
+	}
 }
 
 //
