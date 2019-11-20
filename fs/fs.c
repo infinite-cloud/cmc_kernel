@@ -164,7 +164,7 @@ file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool all
 		return -E_INVAL;
 	}
 
-	if (!f->f_indirect)
+	if (filebno >= NDIRECT && !f->f_indirect)
 	{
 		if (!alloc)
 		{
