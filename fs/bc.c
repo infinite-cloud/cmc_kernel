@@ -108,7 +108,7 @@ flush_block(void *addr)
 	}
 
 	// LAB 10: Your code here.
-	if (!va_is_mapped(addr) && !va_is_dirty(addr))
+	if (!va_is_mapped(addr) || !va_is_dirty(addr))
 	{
 		return;
 	}
