@@ -149,9 +149,37 @@ static int
 sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
 {
 	// LAB 11: Your code here.
+	struct Env *env;
+
 	// Remember to check whether the user has supplied us with a good
 	// address!
-	panic("sys_env_set_trapframe not implemented");
+	if (envid2env(envid, &env, 1) < 0)
+	{
+		return -E_BAD_ENV;
+	}
+
+	// Check whether we are allowed to access the trapframe
+	if (user_mem_check(env, (const void *) tf,
+		sizeof(struct Trapframe), PTE_W | PTE_U | PTE_P) < 0)
+	{
+		return -E_BAD_ENV;
+	}
+
+	// Enable interrupts
+	tf->tf_eflags |= FL_IF;
+	// Clear IOPL
+	tf->tf_eflags &= ~FL_IOPL_3;
+	// Switch to protection ring 3
+	// (see env_alloc() for reference)
+	tf->tf_cs |= 3;
+	tf->tf_ss |= 3;
+	tf->tf_ds |= 3;
+	tf->tf_es |= 3;
+	// Store the trapframe
+	env->env_tf = *tf;
+
+	// panic("sys_env_set_trapframe not implemented");
+	return 0;
 }
 
 // Set the page fault upcall for 'envid' by modifying the corresponding struct
@@ -219,7 +247,8 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 		return -E_INVAL;
 	}
 
-	if ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) || (perm & ~PTE_SYSCALL))
+	if ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) ||
+		(perm & ~PTE_SYSCALL))
 	{
 		return -E_INVAL;
 	}
@@ -283,7 +312,8 @@ sys_page_map(envid_t srcenvid, void *srcva,
 		return -E_INVAL;
 	}
 
-	if ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) || (perm & ~PTE_SYSCALL))
+	if ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) ||
+		(perm & ~PTE_SYSCALL))
 	{
 		return -E_INVAL;
 	}
@@ -401,7 +431,8 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 			return -E_INVAL;
 		}
 
-		if (!(perm & (PTE_U | PTE_P)) || (perm & ~PTE_SYSCALL))
+		if ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) ||
+			(perm & ~PTE_SYSCALL))
 		{
 			return -E_INVAL;
 		}
@@ -498,7 +529,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		case SYS_page_unmap:
 			return sys_page_unmap((envid_t) a1, (void *) a2);
 		case SYS_env_set_pgfault_upcall:
-			return sys_env_set_pgfault_upcall((envid_t) a1, (void *) a2);
+			return sys_env_set_pgfault_upcall((envid_t) a1,
+				(void *) a2);
 		case SYS_yield:
 			sys_yield();
 			return 0;
@@ -507,6 +539,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		case SYS_ipc_try_send:
 			return sys_ipc_try_send((envid_t) a1, (uint32_t) a2,
 				(void *) a3, (unsigned int) a4);
+		case SYS_env_set_trapframe:
+			return sys_env_set_trapframe((envid_t) a1,
+				(struct Trapframe *) a2);
 		default:
 			return -E_INVAL;
 	}

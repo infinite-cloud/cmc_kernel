@@ -96,7 +96,17 @@ duppage(envid_t envid, unsigned pn)
 	penvid = sys_getenvid();
 	va = (void *) (pn * PGSIZE);
 
-	if (((uvpt[pn] & PTE_W) == PTE_W) || ((uvpt[pn] & PTE_COW) == PTE_COW))
+	if ((uvpt[pn] & PTE_SHARE) == PTE_SHARE)
+	{
+		// Don't map child's memory copy-on-write.
+		if ((err = sys_page_map(penvid, va, envid, va,
+			uvpt[pn] & PTE_SYSCALL)) < 0)
+		{
+			panic("duppage: sys_page_map: %i", err);
+		}
+	}
+	else if (((uvpt[pn] & PTE_W) == PTE_W) ||
+		((uvpt[pn] & PTE_COW) == PTE_COW))
 	{
 		// Map child's memory copy-on-write.
 		if ((err = sys_page_map(penvid, va, envid, va,
@@ -115,7 +125,8 @@ duppage(envid_t envid, unsigned pn)
 	else
 	{
 		// Map child's memory non-COW.
-		if ((err = sys_page_map(penvid, va, envid, va, PTE_U | PTE_P)) < 0)
+		if ((err = sys_page_map(penvid, va, envid, va,
+			PTE_U | PTE_P)) < 0)
 		{
 			panic("duppage: sys_page_map: %i", err);
 		}

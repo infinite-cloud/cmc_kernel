@@ -318,6 +318,29 @@ static int
 copy_shared_pages(envid_t child)
 {
 	// LAB 11: Your code here.
+	envid_t parent;
+	uint32_t addr;
+	int err;
+
+	parent = sys_getenvid();
+
+	// Do the same thing as we do in fork(), but only copy the mappings.
+	for (addr = 0; addr < USTACKTOP; addr += PGSIZE)
+	{
+		if ((uvpd[PDX(addr)] & PTE_P) == PTE_P &&
+			(uvpt[PGNUM(addr)] & (PTE_P | PTE_SHARE)) ==
+			(PTE_P | PTE_SHARE))
+		{
+			if ((err = sys_page_map(parent, (void *) addr, child,
+				(void *) addr,
+				uvpt[PGNUM(addr)] & PTE_SYSCALL)) < 0)
+			{
+				panic("copy_shared_pages: sys_page_map: %i",
+					err);
+			}
+		}
+	}
+
 	return 0;
 }
 
