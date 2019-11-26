@@ -219,7 +219,7 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 		return -E_INVAL;
 	}
 
-	if (!(perm & (PTE_U | PTE_P)) || (perm & ~PTE_SYSCALL))
+	if ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) || (perm & ~PTE_SYSCALL))
 	{
 		return -E_INVAL;
 	}
@@ -283,7 +283,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
 		return -E_INVAL;
 	}
 
-	if (!(perm & (PTE_U | PTE_P)) || (perm & ~PTE_SYSCALL))
+	if ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) || (perm & ~PTE_SYSCALL))
 	{
 		return -E_INVAL;
 	}
