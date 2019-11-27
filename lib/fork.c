@@ -61,7 +61,7 @@ pgfault(struct UTrapframe *utf)
 #endif
 
 	if ((panic_err = sys_page_map(envid, PFTEMP, envid,
-		ROUNDDOWN(addr, PGSIZE), PTE_W | PTE_U)) < 0)
+		ROUNDDOWN(addr, PGSIZE), PTE_W | PTE_U | PTE_P)) < 0)
 	{
 		panic("pgfault: sys_page_map: %i", panic_err);
 	}
