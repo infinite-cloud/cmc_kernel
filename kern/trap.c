@@ -2,6 +2,7 @@
 #include <inc/x86.h>
 #include <inc/assert.h>
 #include <inc/string.h>
+#include <inc/vsyscall.h>
 
 #include <kern/pmap.h>
 #include <kern/trap.h>
@@ -34,6 +35,7 @@ struct Pseudodesc idt_pd = {
 	sizeof(idt) - 1, (uint32_t) idt
 };
 
+int *vsys;
 
 static const char *trapname(int trapno)
 {
@@ -232,6 +234,7 @@ trap_dispatch(struct Trapframe *tf)
 	//
 	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS)
 	{
+		pic_send_eoi(IRQ_SPURIOUS);
 		cprintf("Spurious interrupt on irq 7\n");
 		print_trapframe(tf);
 		return;
@@ -241,6 +244,7 @@ trap_dispatch(struct Trapframe *tf)
 	{
 		rtc_check_status();
 		pic_send_eoi(IRQ_CLOCK);
+		vsys[VSYS_gettime] = gettime();
 		sched_yield();
 		return;
 	}
@@ -249,13 +253,17 @@ trap_dispatch(struct Trapframe *tf)
 	// LAB 11: Your code here.
 	if (tf->tf_trapno == IRQ_OFFSET + IRQ_KBD)
 	{
+		pic_send_eoi(IRQ_KBD);
 		kbd_intr();
+		sched_yield();
 		return;
 	}
 
 	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SERIAL)
 	{
+		pic_send_eoi(IRQ_SERIAL);
 		serial_intr();
+		sched_yield();
 		return;
 	}
 

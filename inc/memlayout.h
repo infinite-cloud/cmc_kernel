@@ -120,23 +120,23 @@
 #define UENVS		(UPAGES - PTSIZE)
 // Read-only virtual syscall space
 // LAB 12: Your code here.
-#define UVSYS       0
+#define UVSYS		(UENVS - PTSIZE)
 
 /*
  * Top of user VM. User can manipulate VA from UTOP-1 and down!
  */
 
 // Top of user-accessible VM
-#define UTOP		UENVS
+#define UTOP		UVSYS
 // Top of one-page user exception stack
 #define UXSTACKTOP	UTOP
 // Size of exception stack (must be one page for now)
-#define UXSTACKSIZE PGSIZE
+#define UXSTACKSIZE 	PGSIZE
 // Top of normal user stack
 // Next page left invalid to guard against exception stack overflow; then:
 #define USTACKTOP	(UTOP - USTACKSIZE - UXSTACKSIZE - PGSIZE)
 // Stack size (variable)
-#define USTACKSIZE  (2*PGSIZE)
+#define USTACKSIZE  	(2*PGSIZE)
 // Max number of open files in the file system at once
 #define MAXOPEN		1024
 #define FILEVA		0xD0000000
