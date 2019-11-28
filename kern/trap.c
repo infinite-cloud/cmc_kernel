@@ -235,6 +235,7 @@ trap_dispatch(struct Trapframe *tf)
 		cprintf("Spurious interrupt on irq 7\n");
 		print_trapframe(tf);
 		pic_send_eoi(IRQ_SPURIOUS);
+		sched_yield();
 		return;
 	}
 
