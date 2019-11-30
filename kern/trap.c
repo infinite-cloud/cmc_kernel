@@ -237,7 +237,6 @@ trap_dispatch(struct Trapframe *tf)
 		cprintf("Spurious interrupt on irq 7\n");
 		print_trapframe(tf);
 		pic_send_eoi(IRQ_SPURIOUS);
-		sched_yield();
 		return;
 	}
 
@@ -256,7 +255,6 @@ trap_dispatch(struct Trapframe *tf)
 	{
 		kbd_intr();
 		pic_send_eoi(IRQ_KBD);
-		sched_yield();
 		return;
 	}
 
@@ -264,7 +262,6 @@ trap_dispatch(struct Trapframe *tf)
 	{
 		serial_intr();
 		pic_send_eoi(IRQ_SERIAL);
-		sched_yield();
 		return;
 	}
 
