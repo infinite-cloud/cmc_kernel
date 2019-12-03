@@ -14,6 +14,8 @@
 
 #define debug 0
 
+#define FSREQ_BUFSIZE (PGSIZE - sizeof(int) - sizeof(size_t))
+
 // The file system server maintains three structures
 // for each open file.
 //
@@ -216,6 +218,11 @@ serve_read(envid_t envid, union Fsipc *ipc)
 	{
 		cprintf("serve_read %08x %08x %08x\n", envid, req->req_fileid,
 				req->req_n);
+	}
+
+	if (req->req_n > FSREQ_BUFSIZE)
+	{
+		req->req_n = FSREQ_BUFSIZE;
 	}
 
 	// Lab 10: Your code here:

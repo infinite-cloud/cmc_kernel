@@ -87,8 +87,9 @@ void mktime(int time, struct tm *tm)
 void print_datetime(struct tm *tm)
 {
     cprintf("%04d-%02d-%02d %02d:%02d:%02d\n",
-        tm->tm_year + 1900, tm->tm_mon, tm->tm_mday,
-        tm->tm_hour, tm->tm_min, tm->tm_sec);
+          tm->tm_year + 1900 - ((tm->tm_mon == 0) ? 1 : 0),
+	  ((tm->tm_mon == 0) ? 12 : tm->tm_mon), tm->tm_mday,
+          tm->tm_hour, tm->tm_min, tm->tm_sec);
 }
 
 void snprint_datetime(char *buf, int size, struct tm *tm)
@@ -96,7 +97,8 @@ void snprint_datetime(char *buf, int size, struct tm *tm)
     assert(size >= 10 + 1 + 8 + 1);
     snprintf(buf, size,
           "%04d-%02d-%02d %02d:%02d:%02d",
-          tm->tm_year + 1900, tm->tm_mon, tm->tm_mday,
+          tm->tm_year + 1900 - ((tm->tm_mon == 0) ? 1 : 0),
+	  ((tm->tm_mon == 0) ? 12 : tm->tm_mon), tm->tm_mday,
           tm->tm_hour, tm->tm_min, tm->tm_sec);
 }
 
