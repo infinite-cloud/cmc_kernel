@@ -218,6 +218,9 @@ serve_read(envid_t envid, union Fsipc *ipc)
 				req->req_n);
 	}
 
+	if (req->req_n > PGSIZE - sizeof(int) - sizeof(size_t))
+		req->req_n = PGSIZE - sizeof(int) - sizeof(size_t);
+
 	// Lab 10: Your code here:
 	// Find the relevant open file.
 	if ((err = openfile_lookup(envid, req->req_fileid, &of)) < 0)
