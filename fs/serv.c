@@ -127,7 +127,11 @@ serve_open(envid_t envid, struct Fsreq_open *req,
 
 	// Open the file
 	if (req->req_omode & O_CREAT) {
-		if ((r = file_create(path, &f)) < 0) {
+		r = file_create(path, &f);
+		if (req->req_omode & O_MKDIR) {
+			f->f_type = FTYPE_DIR;
+		}
+		if (r < 0) {
 			if (!(req->req_omode & O_EXCL) && r == -E_FILE_EXISTS)
 				goto try_open;
 			if (debug)
