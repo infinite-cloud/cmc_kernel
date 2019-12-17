@@ -300,7 +300,10 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	env_free_list = e->env_link;
 	*newenv_store = e;
 
+#ifdef DEBUG
 	cprintf("[%08x] new env %08x\n", curenv ? curenv->env_id : 0, e->env_id);
+#endif
+
 	return 0;
 }
 
@@ -596,8 +599,10 @@ env_free(struct Env *e)
 		lcr3(PADDR(kern_pgdir));
 #endif
 
+#ifdef DEBUG
 	// Note the environment's demise.
 	cprintf("[%08x] free env %08x\n", curenv ? curenv->env_id : 0, e->env_id);
+#endif
 
 #ifndef CONFIG_KSPACE
 	// Flush all mapped pages in the user portion of the address space
