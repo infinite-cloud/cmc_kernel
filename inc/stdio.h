@@ -29,5 +29,6 @@ int	vfprintf(int fd, const char *fmt, va_list);
 
 // lib/readline.c
 char*	readline(const char *prompt);
+char*	readline_no_echo(const char *prompt);
 
 #endif /* !JOS_INC_STDIO_H */

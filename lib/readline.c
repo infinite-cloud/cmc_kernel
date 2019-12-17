@@ -42,3 +42,35 @@ readline(const char *prompt)
 	}
 }
 
+char *
+readline_no_echo(const char *prompt)
+{
+	int i, c;
+
+	if (prompt != NULL) {
+#if JOS_KERNEL
+		cprintf("%s", prompt);
+#else
+		fprintf(1, "%s", prompt);
+#endif
+	}
+
+	i = 0;
+	while (1) {
+		c = getchar();
+		if (c < 0) {
+			if (c != -E_EOF)
+				cprintf("read error: %i\n", c);
+			return NULL;
+		} else if ((c == '\b' || c == '\x7f') && i > 0) {
+			i--;
+		} else if (c >= ' ' && i < BUFLEN-1) {
+			buf[i++] = c;
+		} else if (c == '\n' || c == '\r') {
+			cputchar('\n');
+			buf[i] = 0;
+			return buf;
+		}
+	}
+}
+
