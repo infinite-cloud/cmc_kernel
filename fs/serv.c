@@ -116,6 +116,7 @@ serve_open(envid_t envid, struct Fsreq_open *req,
 	// Copy in the path, making sure it's null-terminated
 	memmove(path, req->req_path, MAXPATHLEN);
 	path[MAXPATHLEN-1] = 0;
+	f = NULL;
 
 	// Find an open file ID
 	if ((r = openfile_alloc(&o)) < 0) {
@@ -128,7 +129,7 @@ serve_open(envid_t envid, struct Fsreq_open *req,
 	// Open the file
 	if (req->req_omode & O_CREAT) {
 		r = file_create(path, &f);
-		if (req->req_omode & O_MKDIR) {
+		if ((f != NULL) && (req->req_omode & O_MKDIR)) {
 			f->f_type = FTYPE_DIR;
 		}
 		if (r < 0) {
