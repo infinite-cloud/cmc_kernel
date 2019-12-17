@@ -33,7 +33,8 @@ LIB_SRCFILES :=		$(LIB_SRCFILES) \
 			lib/vsyscall.c
 
 LIB_SRCFILES :=		$(LIB_SRCFILES) \
-			lib/pbkdf2.c
+			lib/pbkdf2.c \
+			lib/login.c
 
 LIB_OBJFILES := $(patsubst lib/%.c, $(OBJDIR)/lib/%.o, $(LIB_SRCFILES))
 LIB_OBJFILES := $(patsubst lib/%.S, $(OBJDIR)/lib/%.o, $(LIB_OBJFILES))
