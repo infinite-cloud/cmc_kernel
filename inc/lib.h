@@ -23,6 +23,7 @@
 #include <inc/args.h>
 #include <inc/login.h>
 #include <inc/path.h>
+#include <inc/crypt.h>
 
 #ifdef SANITIZE_USER_SHADOW_BASE
 // asan unpoison routine used for whitelisting regions.
