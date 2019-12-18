@@ -58,7 +58,8 @@ int find_record(int fd, const char *user, char *record, int members);
  */
 int parse_into_passwd(const char *record, struct Passwd *passwd);
 int parse_into_shadow(const char *record, struct Shadow *shadow);
-/* The following two functions do the opposite to the previous two.
+/*
+ * The following two functions do the opposite to the previous two.
  * The caller is resposible for allocating a buffer of at least
  * BUFSIZE * PASSWD_MEMBER_NUM (BUFSIZE * SHADOW_MEMBER_NUM)
  * for 'record'.
