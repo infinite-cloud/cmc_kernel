@@ -1,7 +1,7 @@
 #ifndef LOGIN_H
 #define LOGIN_H
 
-#define BUFSIZE 1024
+#define BUFSIZE 256
 #define PASSWD_MEMBERS_NUM 3
 #define SHADOW_MEMBERS_NUM 3
 #define SEPARATOR ':'
