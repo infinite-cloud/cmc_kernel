@@ -1,13 +1,13 @@
 #include <inc/lib.h>
 
 /*
- * Checks whether a string pointed to by record
+ * Checks whether a string pointed to by 'record'
  * has an appropriate format, i.e.
  * 	...:...:... for /etc/passwd,
  * 	...:...:... for /etc/shadow.
- * members should hold the amount of separators
+ * 'members' should hold the amount of separators
  * in such string + 1.
- * record should hold a null-terminated buffer
+ * 'record' should hold a null-terminated buffer
  * of no more than BUFSIZE * members characters
  * long.
  */
@@ -40,11 +40,11 @@ validate_record(const char *record, int members)
 }
 
 /*
- * Extracts a name from record and puts it into
- * name.
+ * Extracts a name from 'record' and puts it into
+ * 'name'.
  * The caller is responsible for checking the validity
- * of record and allocating a buffer of at least
- * BUFSIZE characters for name.
+ * of 'record' and allocating a buffer of at least
+ * BUFSIZE characters for 'name'.
  */
 static void
 get_name_from_record(char *name, const char *record)
