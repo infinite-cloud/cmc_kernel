@@ -21,7 +21,6 @@
 #include <inc/fs.h>
 #include <inc/fd.h>
 #include <inc/args.h>
-#include <inc/pbkdf2.h>
 #include <inc/login.h>
 
 #ifdef SANITIZE_USER_SHADOW_BASE
