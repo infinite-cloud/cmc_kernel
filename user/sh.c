@@ -316,6 +316,10 @@ umain(int argc, char **argv)
 			printf("# %s\n", buf);
 		if (!strncmp(buf, "exit", BUFSIZ))
 			exit();
+		if (!strncmp(buf, "pwd", BUFSIZ)) {
+			cprintf("%s\n", getcwd());
+			continue;
+		}
 		if (debug_var)
 			cprintf("BEFORE FORK\n");
 		if ((r = fork()) < 0)
