@@ -74,6 +74,9 @@ int	sys_gettime(void);
 
 int	vsys_gettime(void);
 
+int	sys_chdir(const char *dir, size_t len);
+int	sys_getcwd(char *dir);
+
 // This must be inlined.  Exercise for reader: why?
 static __inline envid_t __attribute__((always_inline))
 sys_exofork(void)

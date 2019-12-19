@@ -126,3 +126,13 @@ int sys_gettime(void)
 {
 	return syscall(SYS_gettime, 0, 0, 0, 0, 0, 0);
 }
+
+int sys_chdir(const char *dir, size_t len)
+{
+	return syscall(SYS_chdir, 0, (uint32_t) dir, len, 0, 0, 0);
+}
+
+int sys_getcwd(char *dir)
+{
+	return syscall(SYS_getcwd, 0, (uint32_t) dir, 0, 0, 0, 0);
+}

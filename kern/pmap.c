@@ -6,6 +6,7 @@
 #include <inc/string.h>
 #include <inc/assert.h>
 #include <inc/vsyscall.h>
+#include <inc/path.h>
 
 #include <kern/vsyscall.h>
 #include <kern/pmap.h>
@@ -29,6 +30,8 @@ pde_t *kern_pgdir;		// Kernel's initial page directory
 struct PageInfo *pages;		// Physical page state array
 static struct PageInfo *page_free_list;	// Free list of physical pages
 struct PageInfo *page_free_list_top;
+char *cwd;
+size_t cwd_len;
 
 // This variable is used by user_mem_assert() and
 // user_mem_check()
@@ -202,6 +205,11 @@ mem_init(void)
 		boot_alloc(NVSYSCALLS * sizeof(int));
 	memset(envs, 0, NVSYSCALLS * sizeof(int));
 
+
+	cwd = (char *)
+		boot_alloc(NCWD * sizeof(char));
+	memset(envs, 0, NCWD * sizeof(char));
+
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
 	// up the list of free physical pages. Once we've done so, all further
@@ -249,6 +257,10 @@ mem_init(void)
 	boot_map_region(kern_pgdir, UVSYS,
 		ROUNDUP(NVSYSCALLS * sizeof(int), PGSIZE),
 		PADDR(vsys), PTE_U | PTE_P);
+
+	boot_map_region(kern_pgdir, UCWD,
+		ROUNDUP(NCWD * sizeof(char), PGSIZE),
+		PADDR(cwd), PTE_U | PTE_P);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -988,6 +1000,7 @@ check_kern_pgdir(void)
 		case PDX(UENVS):
 		// LAB 12: You may remove case PDX(UVSYS) until virtual syscalls are implemented.
 		case PDX(UVSYS):
+		case PDX(UCWD):
 			assert(pgdir[i] & PTE_P);
 			break;
 		default:

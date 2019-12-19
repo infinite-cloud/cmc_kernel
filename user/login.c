@@ -136,7 +136,7 @@ auth(const char *login, const char *password, bool clear)
 	
 	if (!strncmp(buf, shadow.user_hash, BUFSIZE))
 	{
-		set_path(passwd.user_path);
+		chdir(passwd.user_path);
 
 		if (clear)
 		{

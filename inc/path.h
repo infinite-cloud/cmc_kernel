@@ -3,7 +3,12 @@
 #ifndef PATH_H
 #define PATH_H
 
-void set_path(const char *new_path);
-const char *get_path(void);
+#define NCWD BUFSIZE
+
+extern char *cwd;
+extern size_t cwd_len;
+
+void chdir(const char *new_path);
+const char *getcwd(void);
 
 #endif /* !PATH_H */

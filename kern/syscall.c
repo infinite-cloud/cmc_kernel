@@ -4,6 +4,7 @@
 #include <inc/error.h>
 #include <inc/string.h>
 #include <inc/assert.h>
+#include <inc/path.h>
 
 #include <kern/env.h>
 #include <kern/pmap.h>
@@ -513,6 +514,43 @@ sys_gettime(void)
 	return gettime();
 }
 
+static int
+sys_chdir(const char *dir, size_t len)
+{
+	size_t i;
+
+	if (len >= BUFSIZE)
+	{
+		return -E_INVAL;
+	}
+
+	user_mem_assert(curenv, (const void *) dir, len, PTE_U);
+
+	for (i = 0; i < len; i++)
+	{
+		cwd[i] = dir[i];
+	}
+
+	cwd_len = len;
+
+	return 0;
+}
+
+static int
+sys_getcwd(char *dir)
+{
+	size_t i;
+
+	user_mem_assert(curenv, (const void *) dir, cwd_len, PTE_U | PTE_W);
+
+	for (i = 0; i < cwd_len; i++)
+	{
+		dir[i] = cwd[i];
+	}
+
+	return 0;
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -559,6 +597,10 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 				(struct Trapframe *) a2);
 		case SYS_gettime:
 			return sys_gettime();
+		case SYS_chdir:
+			return sys_chdir((const char *) a1, (size_t) a2);
+		case SYS_getcwd:
+			return sys_getcwd((char *) a1);
 		default:
 			return -E_INVAL;
 	}

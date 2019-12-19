@@ -11,6 +11,8 @@
 	.set pages, UPAGES
 	.globl vsys
 	.set vsys, UVSYS
+	.globl cwd
+	.set cwd, UCWD
 	.globl uvpt
 	.set uvpt, UVPT
 	.globl uvpd

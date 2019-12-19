@@ -121,13 +121,14 @@
 // Read-only virtual syscall space
 // LAB 12: Your code here.
 #define UVSYS		(UENVS - PTSIZE)
+#define UCWD		(UVSYS - PTSIZE)
 
 /*
  * Top of user VM. User can manipulate VA from UTOP-1 and down!
  */
 
 // Top of user-accessible VM
-#define UTOP		UVSYS
+#define UTOP		UCWD
 // Top of one-page user exception stack
 #define UXSTACKTOP	UTOP
 // Size of exception stack (must be one page for now)
