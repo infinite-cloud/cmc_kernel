@@ -314,6 +314,8 @@ umain(int argc, char **argv)
 			continue;
 		if (echocmds)
 			printf("# %s\n", buf);
+		if (!strncmp(buf, "exit", BUFSIZ))
+			exit();
 		if (debug_var)
 			cprintf("BEFORE FORK\n");
 		if ((r = fork()) < 0)
