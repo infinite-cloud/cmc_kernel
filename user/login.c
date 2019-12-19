@@ -150,6 +150,12 @@ auth(const char *login, const char *password, bool clear)
 		}
 
 		wait(r);
+
+		if (clear)
+		{
+			clear_scr();
+		}
+
 		exit();
 	}
 
@@ -237,11 +243,6 @@ umain(int argc, char *argv[])
 
 		while (vsys_gettime() - now <= 1)
 		{
-		}
-
-		if (clear)
-		{
-			clear_scr();
 		}
 
 		exit();
