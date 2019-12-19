@@ -62,7 +62,7 @@ umain(int argc, char **argv)
 		// cprintf("init: starting sh\n");
 		cprintf("init: starting login\n");
 		// r = spawnl("/sh", "sh", (char*)0);
-		r = spawnl("/login", "login", (char *) 0);
+		r = spawnl("/login", "login", "-c", (char *) 0);
 		if (r < 0) {
 			// cprintf("init: spawn sh: %i\n", r);
 			cprintf("init: spawn login: %i\n", r);

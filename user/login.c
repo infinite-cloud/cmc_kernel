@@ -59,8 +59,24 @@ init(void)
 	return 0;
 }
 
+void
+clear_scr(void)
+{
+	int i;
+
+	for (i = 0; i < CRT_ROWS; i++)
+	{
+		cputchar('\n');
+	}
+
+	for (i = 0; i < CRT_ROWS * CRT_COLS; i++)
+	{
+		cputchar('\b');
+	}
+}
+
 int
-auth(const char *login, const char *password)
+auth(const char *login, const char *password, bool clear)
 {
 	int fd, r, r0;
 	char passwd_record[BUFSIZE * PASSWD_MEMBERS_NUM];
@@ -122,6 +138,11 @@ auth(const char *login, const char *password)
 	{
 		set_path(passwd.user_path);
 
+		if (clear)
+		{
+			clear_scr();
+		}
+
 		if ((r = spawnl(passwd.user_shell, passwd.user_shell + 1,
 			(char *) 0)) < 0)
 		{
@@ -133,22 +154,6 @@ auth(const char *login, const char *password)
 	}
 
 	return 1;
-}
-
-void
-clear_scr(void)
-{
-	int i;
-
-	for (i = 0; i < CRT_ROWS; i++)
-	{
-		cputchar('\n');
-	}
-
-	for (i = 0; i < CRT_ROWS * CRT_COLS; i++)
-	{
-		cputchar('\b');
-	}
 }
 
 void 
@@ -171,7 +176,7 @@ prompt(char *login, char *password)
 void
 usage(void)
 {
-	cprintf("Usage: login [name]\n");
+	cprintf("Usage: login [-c] [name]\n");
 	exit();
 }
 
@@ -179,12 +184,30 @@ void
 umain(int argc, char *argv[])
 {
 	int i, r, now;
+	bool clear;
 	char login[BUFSIZE], password[BUFSIZE];
+	struct Argstate args;
 
 	for (i = 0; i < BUFSIZE; i++)
 	{
 		login[i] = '\0';
 		password[i] = '\0';
+	}
+
+	clear = false;
+	argstart(&argc, argv, &args);
+
+	while ((r = argnext(&args)) >= 0)
+	{
+		switch(r)
+		{
+			case 'c':
+				clear = true;
+				break;
+			default:
+				usage();
+				break;
+		}
 	}
 
 	if (argc > 2)
@@ -201,10 +224,9 @@ umain(int argc, char *argv[])
 		panic("login: init: %i", r);
 	}
 
-	/* TODO: Perform an optional clear_scr(); call here */
 	prompt(login, password);
 
-	if ((r = auth(login, password)) < 0)
+	if ((r = auth(login, password, clear)) < 0)
 	{
 		panic("login: auth: %i", r);
 	}
@@ -215,6 +237,11 @@ umain(int argc, char *argv[])
 
 		while (vsys_gettime() - now <= 1)
 		{
+		}
+
+		if (clear)
+		{
+			clear_scr();
 		}
 
 		exit();
