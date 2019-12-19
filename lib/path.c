@@ -2,7 +2,7 @@
 #include <inc/path.h>
 #include <inc/lib.h>
 
-char path[BUFSIZE];
+static char path[BUFSIZE];
 
 void
 chdir(const char *new_path)

@@ -317,7 +317,7 @@ umain(int argc, char **argv)
 		if (!strncmp(buf, "exit", BUFSIZ))
 			exit();
 		if (!strncmp(buf, "pwd", BUFSIZ)) {
-			cprintf("%s\n", getcwd());
+			printf("%s\n", getcwd());
 			continue;
 		}
 		if (debug_var)
