@@ -60,6 +60,12 @@ chdir(const char *new_path)
 	{
 		dir = getcwd();
 		strncpy(buf, dir, BUFSIZE);
+		len = strnlen(buf, BUFSIZE);
+
+		if (buf[len - 1] == '/' && len > 1)
+		{
+			buf[len - 1] = '\0';
+		}
 
 		if (!strncmp(new_path, "..", BUFSIZE))
 		{
@@ -76,6 +82,12 @@ chdir(const char *new_path)
 	{
 		dir = get_last_dir(new_path);
 		strncpy(buf, new_path, BUFSIZE);
+		len = strnlen(buf, BUFSIZE);
+
+		if (buf[len - 1] == '/' && len > 1)
+		{
+			buf[len - 1] = '\0';
+		}
 
 		if (!strncmp(dir, ".", BUFSIZE))
 		{
