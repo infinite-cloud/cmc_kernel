@@ -203,12 +203,12 @@ mem_init(void)
 	// LAB 12: Your code here.
 	vsys = (int *)
 		boot_alloc(NVSYSCALLS * sizeof(int));
-	memset(envs, 0, NVSYSCALLS * sizeof(int));
+	memset(vsys, 0, NVSYSCALLS * sizeof(int));
 
 
 	cwd = (char *)
 		boot_alloc(NCWD * sizeof(char));
-	memset(envs, 0, NCWD * sizeof(char));
+	memset(cwd, 0, NCWD * sizeof(char));
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
