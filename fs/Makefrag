@@ -33,6 +33,7 @@ USERAPPS :=		$(OBJDIR)/user/init \
 			$(OBJDIR)/user/date \
 			$(OBJDIR)/user/vdate \
 			$(OBJDIR)/user/login \
+			$(OBJDIR)/user/useradd \
 
 
 FSIMGFILES := $(FSIMGTXTFILES) $(USERAPPS)
