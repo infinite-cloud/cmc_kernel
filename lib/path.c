@@ -59,14 +59,6 @@ chdir(const char *new_path)
 	if (new_path[0] != '/')
 	{
 		dir = getcwd();
-
-		/* TODO: Should return a special error signifying that
-		   the path should be initialized first */
-		if (dir[0] == '\0')
-		{
-			return -1;
-		}
-
 		strncpy(buf, dir, BUFSIZE);
 
 		if (!strncmp(new_path, "..", BUFSIZE))

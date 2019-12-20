@@ -208,7 +208,9 @@ mem_init(void)
 
 	cwd = (char *)
 		boot_alloc(NCWD * sizeof(char));
-	memset(cwd, 0, NCWD * sizeof(char));
+	memset(cwd, '/', sizeof(char));
+	memset(cwd + 1, 0, (NCWD - 1) * sizeof(char));
+	cwd_len = 1;
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
