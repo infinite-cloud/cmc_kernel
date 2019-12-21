@@ -110,7 +110,6 @@ umain(int argc, char *argv[])
 
 	if ((fd_shadow = open("/etc/shadow", O_RDWR)) < 0)
 	{
-		close(fd_passwd);
 		cprintf("useradd: open: %i\n", fd_shadow);
 		exit();
 	}
@@ -118,8 +117,6 @@ umain(int argc, char *argv[])
 	if ((r = find_record(fd_passwd, login, record, PASSWD_MEMBERS_NUM)) < 0 ||
 		r > 0)
 	{
-		close(fd_passwd);
-		close(fd_shadow);
 		cprintf("useradd: find_record: %i\n", r);
 		exit();
 	}
@@ -127,8 +124,6 @@ umain(int argc, char *argv[])
 	if ((r = find_record(fd_shadow, login, record, SHADOW_MEMBERS_NUM)) < 0 ||
 		r > 0)
 	{
-		close(fd_passwd);
-		close(fd_shadow);
 		cprintf("useradd: find_record: %i\n", r);
 		exit();
 	}
@@ -137,8 +132,6 @@ umain(int argc, char *argv[])
 	{
 		if (r < 0)
 		{
-			close(fd_passwd);
-			close(fd_shadow);
 			cprintf("useradd: read: %i\n", r);
 			exit();
 		}
@@ -148,8 +141,6 @@ umain(int argc, char *argv[])
 
 	if ((r = write(fd_passwd, &c, sizeof(char))) < 0)
 	{
-		close(fd_passwd);
-		close(fd_shadow);
 		cprintf("useradd: write: %i\n", r);
 		exit();
 	}
@@ -158,8 +149,6 @@ umain(int argc, char *argv[])
 	{
 		if (r < 0)
 		{
-			close(fd_passwd);
-			close(fd_shadow);
 			cprintf("useradd: read: %i", r);
 			exit();
 		}
@@ -169,16 +158,12 @@ umain(int argc, char *argv[])
 
 	if ((r = write(fd_shadow, &c, sizeof(char))) < 0)
 	{
-		close(fd_passwd);
-		close(fd_shadow);
 		cprintf("useradd: write: %i\n", r);
 		exit();
 	}
 
 	if ((r = open(home, O_MKDIR | O_CREAT)) < 0)
 	{
-		close(fd_passwd);
-		close(fd_shadow);
 		cprintf("useradd: open: %i\n", r);
 		exit();
 	}
@@ -191,8 +176,6 @@ umain(int argc, char *argv[])
 	if ((r = write(fd_passwd, (const void *) record,
 		strnlen(record, BUFSIZE * 3))) < 0)
 	{
-		close(fd_passwd);
-		close(fd_shadow);
 		cprintf("useradd: write: %i\n", r);
 		exit();
 	}
@@ -207,7 +190,6 @@ umain(int argc, char *argv[])
 	if ((r = write(fd_shadow, (const void *) record,
 		strnlen(record, BUFSIZE * 3))) < 0)
 	{
-		close(fd_shadow);
 		cprintf("useradd: write: %i\n", r);
 		exit();
 	}
