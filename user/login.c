@@ -15,12 +15,14 @@ init(void)
 		"/etc/shadow",
 		"/home",
 		"/home/user",
+		"/tmp",
 	};
 	const unsigned int modes[] =
 	{
 		O_CREAT | O_EXCL | O_MKDIR,
 		O_CREAT | O_EXCL,
 		O_CREAT | O_EXCL,
+		O_CREAT | O_EXCL | O_MKDIR,
 		O_CREAT | O_EXCL | O_MKDIR,
 		O_CREAT | O_EXCL | O_MKDIR,
 	};
@@ -30,6 +32,7 @@ init(void)
 		"user:/home/user:/sh",
 		/* TODO: Generate actual salt and hash instead */
 		"user:salt:hash",
+		"",
 		"",
 		"",
 	};
