@@ -9,7 +9,8 @@
  * tmp_buffer is a pointer to at least MAX(hash_len, salt_len + 4) + hash_len
  * bytes.
  */
-static void compute_pbkdf2(PRF prf, size_t hash_len,
+static void
+compute_pbkdf2(PRF prf, size_t hash_len,
 	const void *pwd_ptr, size_t pwd_len,
 	const void *salt_ptr, size_t salt_len,
 	size_t it_count, uint32_t block_num,
@@ -57,7 +58,8 @@ static void compute_pbkdf2(PRF prf, size_t hash_len,
 	}
 }
 
-void pbkdf2(PRF prf, size_t hash_len,
+void
+pbkdf2(PRF prf, size_t hash_len,
 	const void *pwd_ptr, size_t pwd_len,
 	const void *salt_ptr, size_t salt_len,
 	size_t it_count,
