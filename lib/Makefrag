@@ -10,10 +10,10 @@ LIB_SRCFILES :=		lib/console.c \
 			lib/readline.c \
 			lib/syscall.c
 
-ifeq ($(CONFIG_KSPACE),y)
+# ifeq ($(CONFIG_KSPACE),y)
 LIB_SRCFILES +=		lib/random.c \
 			lib/random_data.c
-endif
+# endif
 
 LIB_SRCFILES :=		$(LIB_SRCFILES) \
 			lib/pgfault.c \

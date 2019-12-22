@@ -30,8 +30,7 @@ init(void)
 	{
 		"",
 		"user:/home/user:/sh",
-		/* TODO: Generate actual salt and hash instead */
-		"user:salt:hash",
+		"user:osPUWC4ITJ92:m9NMSz2HozU1OYGKaaEWdydNVXEA",
 		"",
 		"",
 		"",
@@ -136,7 +135,7 @@ auth(const char *login, const char *password, bool clear)
 	}
 
 	crypt(password, shadow.user_salt, buf);
-	
+
 	if (!strncmp(buf, shadow.user_hash, BUFSIZE))
 	{
 		if ((r = chdir(passwd.user_path)) < 0)
