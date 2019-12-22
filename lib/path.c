@@ -3,101 +3,110 @@
 #include <inc/lib.h>
 
 static char path[BUFSIZE];
-static char buf[BUFSIZE * 2 + 1];
 
-static const char *
-get_last_dir(const char *full_path)
+static int
+parse_path(char *parsed_path, const char *new_path)
 {
-	int i, slash;
+	int i, parsed_idx, part_idx;
+	char part[BUFSIZE];
+	bool stop;
 
-	slash = -1;
+	parsed_idx = 0;
+	part_idx = 0;
+	stop = false;
+	i = 0;
+	part[0] = '\0';
 
-	for (i = 0; i < BUFSIZE; i++)
+	if (new_path[0] != '/')
 	{
-		if (full_path[i] == '\0')
+		strncpy(parsed_path, getcwd(), BUFSIZE);
+		parsed_idx += strnlen(parsed_path, BUFSIZE);
+
+		if (strcmp(parsed_path, "/") || !strcmp(new_path, ".."))
 		{
-			break;
+			parsed_path[parsed_idx++] = '/';
 		}
-		else if (full_path[i] == '/')
+	}
+	else
+	{
+		parsed_path[parsed_idx++] = '/';
+		i++;
+	}
+
+	while (i < BUFSIZE && !stop)
+	{
+		if (i > 0 && new_path[i - 1] == '/' && new_path[i] == '/')
 		{
-			slash = i;
+			return -1;
+		}
+
+		if (new_path[i] == '/' || new_path[i] == '\0')
+		{
+			if (new_path[i] == '\0')
+			{
+				stop = true;
+			}
+
+			if (!strcmp(part, ".."))
+			{
+				parsed_idx--;
+
+				while (parsed_idx > 1 && parsed_path[parsed_idx - 1] != '/')
+				{
+					parsed_path[parsed_idx--] = '\0';
+				}
+
+				part[0] = '\0';
+				part_idx = 0;
+				i++;
+				continue;
+			}
+			else if (!strcmp(part, "."))
+			{
+				part[0] = '\0';
+				part_idx = 0;
+				i++;
+				continue;
+			}
+
+			strncpy(&parsed_path[parsed_idx], part, part_idx);
+			parsed_idx += part_idx;
+			part[0] = '\0';
+			part_idx = 0;
+			i++;
+			parsed_path[parsed_idx] = '/';
+
+			if (!stop)
+			{
+				parsed_idx++;
+			}
+		}
+		else
+		{
+			part[part_idx++] = new_path[i++];
 		}
 	}
 
-	strncpy(buf, full_path + slash + 1, BUFSIZE);
-
-	return buf;
-}
-
-static void
-remove_last_dir(char *full_path)
-{
-	int i;
-
-	for (i = strnlen(full_path, BUFSIZE) - 1; i >= 0; i--)
+	while (parsed_idx > 1 && parsed_path[parsed_idx - 1] == '/')
 	{
-		if (full_path[i] == '/')
-		{
-			full_path[i] = '\0';
-			break;
-		}
-
-		full_path[i] = '\0';
+		parsed_idx--;
 	}
 
-	full_path[0] = '/';
+	parsed_path[parsed_idx] = '\0';
+
+	return 0;
 }
 
 int
 chdir(const char *new_path)
 {
 	int r;
-	size_t len;
-	const char *dir;
+	char buf[BUFSIZE];
 	struct Stat st;
 
-	if (new_path[0] != '/')
+	if ((r = parse_path(buf, new_path)) < 0)
 	{
-		dir = getcwd();
-		strncpy(buf, dir, BUFSIZE);
-		len = strnlen(buf, BUFSIZE);
-
-		if (buf[len - 1] == '/' && len > 1)
-		{
-			buf[len - 1] = '\0';
-		}
-
-		if (!strncmp(new_path, "..", BUFSIZE))
-		{
-			remove_last_dir(buf);
-		}
-		else if (strncmp(new_path, ".", BUFSIZE))
-		{
-			len = strnlen(path, BUFSIZE);
-			buf[len] = '/';
-			strncpy(buf + len + 1, new_path, BUFSIZE);
-		}
-	}
-	else
-	{
-		dir = get_last_dir(new_path);
-		strncpy(buf, new_path, BUFSIZE);
-		len = strnlen(buf, BUFSIZE);
-
-		if (buf[len - 1] == '/' && len > 1)
-		{
-			buf[len - 1] = '\0';
-		}
-
-		if (!strncmp(dir, ".", BUFSIZE))
-		{
-			remove_last_dir(buf);
-		}
-		else if (!strncmp(dir, "..", BUFSIZE))
-		{
-			remove_last_dir(buf);
-			remove_last_dir(buf);
-		}
+		return r;
 	}
 
 	if ((r = stat(buf, &st)) < 0)
