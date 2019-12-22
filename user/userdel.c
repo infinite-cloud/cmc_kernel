@@ -46,10 +46,11 @@ get_name(const char *record)
 }
 
 int
-copy_file(int fd_from, int fd_to, const char *name)
+copy_file(int fd_from, int fd_to, const char *name, bool rm_dir)
 {
 	int r, c, eof;
 	char record[BUFSIZE * 3];
+	struct Passwd passwd;
 
 	do
 	{
@@ -71,9 +72,19 @@ copy_file(int fd_from, int fd_to, const char *name)
 				break;
 			}
 		}
+		else if (r >= 0 && rm_dir)
+		{
+			parse_into_passwd(record, &passwd);
+
+			if ((r = remove(passwd.user_path)) < 0)
+			{
+				break;
+			}
+		}
 
 		if (!eof)
 		{
+			r = eof;
 			break;
 		}
 	} while (r > 0);
@@ -84,7 +95,7 @@ copy_file(int fd_from, int fd_to, const char *name)
 void
 usage(void)
 {
-	cprintf("Usage: userdel LOGIN\n");
+	cprintf("Usage: userdel [-d] LOGIN\n");
 	exit();
 }
 
@@ -92,11 +103,29 @@ void
 umain(int argc, char *argv[])
 {
 	int i, r, fd_tmp, fd;
+	bool rm_dir;
 	const char *files[] =
 	{
 		"/etc/passwd",
 		"/etc/shadow",
 	};
+	struct Argstate args;
+
+	rm_dir = false;
+	argstart(&argc, argv, &args);
+
+	while ((r = argnext(&args)) >= 0)
+	{
+		switch(r)
+		{
+			case 'd':
+				rm_dir = true;
+				break;
+			default:
+				usage();
+				break;
+		}
+	}
 
 	if (argc != 2)
 	{
@@ -118,7 +147,7 @@ umain(int argc, char *argv[])
 			exit();
 		}
 
-		if ((r = copy_file(fd, fd_tmp, argv[1])) < 0)
+		if ((r = copy_file(fd, fd_tmp, argv[1], rm_dir)) < 0)
 		{
 			cprintf("userdel: copy_file: %i\n", r);
 			exit();
@@ -139,7 +168,7 @@ umain(int argc, char *argv[])
 			exit();
 		}
 
-		if ((r = copy_file(fd_tmp, fd, "")) < 0)
+		if ((r = copy_file(fd_tmp, fd, "", false)) < 0)
 		{
 			cprintf("userdel: copy_file: %i\n", r);
 			exit();
@@ -149,5 +178,9 @@ umain(int argc, char *argv[])
 		close(fd_tmp);
 	}
 
-	remove("/tmp");
+	if ((r = remove("/tmp/userdel.tmp")) < 0)
+	{
+		cprintf("userdel: remove: %i\n", r);
+		exit();
+	}
 }
