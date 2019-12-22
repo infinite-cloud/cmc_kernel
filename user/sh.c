@@ -131,6 +131,19 @@ runit:
 		return;
 	}
 
+	if (!strncmp(argv[0], "cd", BUFSIZ)) {
+		if (argc != 2) {
+			cprintf("Usage: cd PATH\n");
+			return;
+		}
+
+		if ((r = chdir(argv[1])) < 0) {
+			cprintf("cd: %i\n", r);
+		}
+
+		return;
+	}
+
 	// Clean up command line.
 	// Read all commands from the filesystem: add an initial '/' to
 	// the command name.
