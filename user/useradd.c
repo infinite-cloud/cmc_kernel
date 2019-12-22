@@ -39,6 +39,7 @@ umain(int argc, char *argv[])
 {
 	int r, c, fd_passwd, fd_shadow;
 	char record[BUFSIZE * 3];
+	char buf[BUFSIZE];
 	const char *home, *password, *shell, *login;
 	struct Passwd passwd;
 	struct Shadow shadow;
@@ -77,6 +78,13 @@ umain(int argc, char *argv[])
 	else if (argc == 2)
 	{
 		login = argv[1];
+	}
+
+	if (login && !home)
+	{
+		strncpy(buf, "/home/", BUFSIZE);
+		strncpy(buf + 6, login, BUFSIZE - 6);
+		home = buf;
 	}
 
 	login = (login) ? login : DEFAULT_USER;
