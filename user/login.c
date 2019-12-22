@@ -4,63 +4,6 @@
 #define CRT_ROWS 25
 #define CRT_COLS 80
 
-int
-init(void)
-{
-	int i, fd, r;
-	const char *paths[] =
-	{
-		"/etc",
-		"/etc/passwd",
-		"/etc/shadow",
-		"/home",
-		"/home/user",
-		"/tmp",
-	};
-	const unsigned int modes[] =
-	{
-		O_CREAT | O_EXCL | O_MKDIR,
-		O_CREAT | O_EXCL,
-		O_CREAT | O_EXCL,
-		O_CREAT | O_EXCL | O_MKDIR,
-		O_CREAT | O_EXCL | O_MKDIR,
-		O_CREAT | O_EXCL | O_MKDIR,
-	};
-	const char *default_user[] = 
-	{
-		"",
-		"user:/home/user:/sh",
-		"user:osPUWC4ITJ92:m9NMSz2HozU1OYGKaaEWdydNVXEA",
-		"",
-		"",
-		"",
-	};
-
-	for (i = 0; i < sizeof(modes) / sizeof(modes[0]); i++)
-	{
-		if ((r = open(paths[i], modes[i])) < 0 && r != -E_FILE_EXISTS)
-		{
-			return r;
-		}
-
-		if (i == 1 || i == 2)
-		{
-			fd = open(paths[i], O_WRONLY);
-
-			if ((r = write(fd, (const void *) default_user[i],
-				strlen(default_user[i]) * sizeof(char))) < 0)
-			{
-				close(fd);
-				return r;
-			}
-
-			close(fd);
-		}
-	}
-
-	return 0;
-}
-
 void
 clear_scr(void)
 {
@@ -228,11 +171,6 @@ umain(int argc, char *argv[])
 	else if (argc == 2)
 	{
 		strncpy(login, argv[1], BUFSIZE);
-	}
-
-	if ((r = init()) < 0)
-	{
-		panic("login: init: %i", r);
 	}
 
 	prompt(login, password);

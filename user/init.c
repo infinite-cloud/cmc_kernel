@@ -19,6 +19,63 @@ sum(const char *s, int n)
 	return tot;
 }
 
+int
+login_init(void)
+{
+	int i, fd, r;
+	const char *paths[] =
+	{
+		"/etc",
+		"/etc/passwd",
+		"/etc/shadow",
+		"/home",
+		"/home/user",
+		"/tmp",
+	};
+	const unsigned int modes[] =
+	{
+		O_CREAT | O_EXCL | O_MKDIR,
+		O_CREAT | O_EXCL,
+		O_CREAT | O_EXCL,
+		O_CREAT | O_EXCL | O_MKDIR,
+		O_CREAT | O_EXCL | O_MKDIR,
+		O_CREAT | O_EXCL | O_MKDIR,
+	};
+	const char *default_user[] =
+	{
+		"",
+		"user:/home/user:/sh",
+		"user:osPUWC4ITJ92:m9NMSz2HozU1OYGKaaEWdydNVXEA",
+		"",
+		"",
+		"",
+	};
+
+	for (i = 0; i < sizeof(modes) / sizeof(modes[0]); i++)
+	{
+		if ((r = open(paths[i], modes[i])) < 0 && r != -E_FILE_EXISTS)
+		{
+			return r;
+		}
+
+		if (i == 1 || i == 2)
+		{
+			fd = open(paths[i], O_WRONLY);
+
+			if ((r = write(fd, (const void *) default_user[i],
+				strlen(default_user[i]) * sizeof(char))) < 0)
+			{
+				close(fd);
+				return r;
+			}
+
+			close(fd);
+		}
+	}
+
+	return 0;
+}
+
 void
 umain(int argc, char **argv)
 {
@@ -58,6 +115,8 @@ umain(int argc, char **argv)
 		panic("first opencons used fd %d", r);
 	if ((r = dup(0, 1)) < 0)
 		panic("dup: %i", r);
+	if ((r = login_init()) < 0)
+		panic("login_init: %i", r);
 	while (1) {
 		// cprintf("init: starting sh\n");
 		cprintf("init: starting login\n");
