@@ -149,10 +149,5 @@ umain(int argc, char *argv[])
 		close(fd_tmp);
 	}
 
-
-	if ((fd_tmp = open("/tmp/userdel.tmp", O_TRUNC)) < 0)
-	{
-		cprintf("userdel: open: %i\n", fd_tmp);
-		exit();
-	}
+	remove("/tmp");
 }

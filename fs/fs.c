@@ -530,3 +530,22 @@ fs_sync(void)
 		flush_block(diskaddr(i));
 }
 
+// Remove a file by truncating it and then zeroing the name.
+int
+file_remove(const char *path)
+{
+	int r;
+	struct File *f;
+
+	if ((r = walk_path(path, 0, &f, 0)) < 0)
+	{
+		return r;
+	}
+
+	file_truncate_blocks(f, 0);
+	f->f_name[0] = '\0';
+	f->f_size = 0;
+	flush_block(f);
+
+	return 0;
+}

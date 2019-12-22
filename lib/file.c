@@ -198,3 +198,12 @@ sync(void)
 	return fsipc(FSREQ_SYNC, NULL);
 }
 
+// Delete a file
+int
+remove(const char *path)
+{
+	if (strlen(path) >= MAXPATHLEN)
+		return -E_BAD_PATH;
+	strcpy(fsipcbuf.remove.req_path, path);
+	return fsipc(FSREQ_REMOVE, NULL);
+}

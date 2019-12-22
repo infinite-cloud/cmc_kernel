@@ -330,6 +330,34 @@ serve_sync(envid_t envid, union Fsipc *req)
 	return 0;
 }
 
+// Remove the file req->req_path.
+int
+serve_remove(envid_t envid, struct Fsreq_remove *req)
+{
+	char c, path[MAXPATHLEN];
+
+	if (debug)
+	{
+		cprintf("serve_remove %08x %s\n", envid, req->req_path);
+	}
+
+	// Delete the named file.
+	// Note: This request doesn't refer to an open file.
+
+	// Copy in the path, making sure it's null-terminated.
+	c = '\0';
+#ifdef SANITIZE_USER_SHADOW_BASE
+	__nosan_memcpy(path, req->req_path, MAXPATHLEN);
+	__nosan_memcpy(path + MAXPATHLEN - 1, &c, 1);
+#else
+	memmove(path, req->req_path, MAXPATHLEN);
+	path[MAXPATHLEN - 1] = '\0';
+#endif
+
+	// Delete the specified file
+	return file_remove(path);
+}
+
 typedef int (*fshandler)(envid_t envid, union Fsipc *req);
 
 fshandler handlers[] = {
@@ -340,6 +368,7 @@ fshandler handlers[] = {
 	[FSREQ_FLUSH] =		(fshandler)serve_flush,
 	[FSREQ_WRITE] =		(fshandler)serve_write,
 	[FSREQ_SET_SIZE] =	(fshandler)serve_set_size,
+	[FSREQ_REMOVE] =	(fshandler)serve_remove,
 	[FSREQ_SYNC] =		serve_sync
 };
 #define NHANDLERS (sizeof(handlers)/sizeof(handlers[0]))
