@@ -6,7 +6,7 @@
 #define DEFAULT_SHELL "/sh"
 
 static bool
-validate_member(const char *member)
+validate_member(const char *member, const char *invalid_chars)
 {
 	int i;
 
@@ -17,7 +17,7 @@ validate_member(const char *member)
 			break;
 		}
 
-		if (member[i] == SEPARATOR)
+		if (strchr(invalid_chars, member[i]))
 		{
 			return false;
 		}
@@ -92,19 +92,19 @@ umain(int argc, char *argv[])
 	shell = (shell) ? shell : DEFAULT_SHELL;
 	home = (home) ? home : DEFAULT_HOME;
 
-	if (!validate_member(login))
+	if (!validate_member(login, ":/"))
 	{
 		cprintf("Invalid login\n");
 		exit();
 	}
 
-	if (!validate_member(shell))
+	if (!validate_member(shell, ":"))
 	{
 		cprintf("Invalid shell\n");
 		exit();
 	}
 
-	if (!validate_member(home))
+	if (!validate_member(home, ":"))
 	{
 		cprintf("Invalid home\n");
 		exit();
