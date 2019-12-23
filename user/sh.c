@@ -23,7 +23,6 @@ runcmd(char* s)
 {
 	char *argv[MAXARGS], *t, argv0buf[BUFSIZ], *nf_buf, path[BUFSIZ];
 	int argc, c, i, r, p[2], fd, pipe_child;
-	size_t len;
 
 	pipe_child = 0;
 	gettoken(s, 0);
@@ -56,8 +55,9 @@ again:
 			// then close the original 'fd'.
 
 			// LAB 11: Your code here.
-			if ((fd = open(t, O_RDONLY)) < 0) {
-				cprintf("open %s for read: %i", t, fd);
+			parse_path(path, t);
+			if ((fd = open(path, O_RDONLY)) < 0) {
+				cprintf("open %s for read: %i", path, fd);
 				exit();
 			}
 			if (fd != 0) {
@@ -73,8 +73,9 @@ again:
 				cprintf("syntax error: > not followed by word\n");
 				exit();
 			}
-			if ((fd = open(t, O_WRONLY|O_CREAT|O_TRUNC)) < 0) {
-				cprintf("open %s for write: %i", t, fd);
+			parse_path(path, t);
+			if ((fd = open(path, O_WRONLY|O_CREAT|O_TRUNC)) < 0) {
+				cprintf("open %s for write: %i", path, fd);
 				exit();
 			}
 			if (fd != 1) {
@@ -138,14 +139,8 @@ runit:
 	// Read all commands from the filesystem: add an initial '/' to
 	// the command name.
 	// This essentially acts like 'PATH=/'.
-	if (argv[0][0] != '/') {
-		getcwd(argv0buf);
-		len = strnlen(argv0buf, BUFSIZ - 1);
-		if (len > 1)
-			strcat(argv0buf, "/");
-		strcat(argv0buf, argv[0]);
-		argv[0] = argv0buf;
-	}
+	parse_path(argv0buf, argv[0]);
+	argv[0] = argv0buf;
 	argv[argc] = 0;
 
 	// Print the command.

@@ -2,7 +2,7 @@
 #include <inc/path.h>
 #include <inc/lib.h>
 
-static int
+int
 parse_path(char *parsed_path, const char *new_path)
 {
 	int i, parsed_idx, part_idx;

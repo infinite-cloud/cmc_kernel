@@ -87,8 +87,10 @@ umain(int argc, char **argv)
 		ls(path, "");
 	}
 	else {
-		for (i = 1; i < argc; i++)
-			ls(argv[i], argv[i]);
+		for (i = 1; i < argc; i++) {
+			parse_path(path, argv[i]);
+			ls(path, path);
+		}
 	}
 }
 
