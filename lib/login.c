@@ -135,7 +135,7 @@ parse_into_passwd(const char *record, struct Passwd *passwd)
 	/* Record is invalid, return */
 	if (!validate_record(record, PASSWD_MEMBERS_NUM))
 	{
-		return -1;
+		return -E_INVAL_REC;
 	}
 
 	/* This is the amount of chars we read,
@@ -187,7 +187,7 @@ parse_into_shadow(const char *record, struct Shadow *shadow)
 
 	if (!validate_record(record, SHADOW_MEMBERS_NUM))
 	{
-		return -1;
+		return -E_INVAL_REC;
 	}
 
 	read_count = 0;

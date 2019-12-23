@@ -35,7 +35,7 @@ parse_path(char *parsed_path, const char *new_path)
 	{
 		if (i > 0 && new_path[i - 1] == '/' && new_path[i] == '/')
 		{
-			return -1;
+			return -E_INVAL_PATH;
 		}
 
 		if (new_path[i] == '/' || new_path[i] == '\0')
@@ -114,7 +114,7 @@ chdir(const char *new_path)
 
 	if (!st.st_isdir)
 	{
-		return -1;
+		return -E_NOT_A_DIR;
 	}
 
 	sys_chdir(buf, strnlen(buf, BUFSIZE) + 1);

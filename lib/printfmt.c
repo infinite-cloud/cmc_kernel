@@ -35,6 +35,9 @@ static const char * const error_string[MAXERROR] =
 	[E_FILE_EXISTS]	= "file already exists",
 	[E_NOT_EXEC]	= "file is not a valid executable",
 	[E_NOT_SUPP]	= "operation not supported",
+	[E_INVAL_PATH]	= "invalid path",
+	[E_NOT_A_DIR]	= "not a directory",
+	[E_INVAL_REC]	= "invalid user record",
 };
 
 /*

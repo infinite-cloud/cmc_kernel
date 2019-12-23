@@ -26,6 +26,11 @@ enum {
 	E_NOT_EXEC	= 14,	// File not a valid executable
 	E_NOT_SUPP	= 15,	// Operation not supported
 
+	E_INVAL_PATH	= 16,
+	E_NOT_A_DIR	= 17,
+
+	E_INVAL_REC	= 18,
+
 	MAXERROR
 };
 
