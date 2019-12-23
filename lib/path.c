@@ -40,6 +40,8 @@ parse_path(char *parsed_path, const char *new_path)
 
 		if (new_path[i] == '/' || new_path[i] == '\0')
 		{
+			part[part_idx] = '\0';
+
 			if (new_path[i] == '\0')
 			{
 				stop = true;
