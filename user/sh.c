@@ -21,8 +21,9 @@ int gettoken(char *s, char **token);
 void
 runcmd(char* s)
 {
-	char *argv[MAXARGS], *t, argv0buf[BUFSIZ];
+	char *argv[MAXARGS], *t, argv0buf[BUFSIZ], *nf_buf;
 	int argc, c, i, r, p[2], fd, pipe_child;
+	size_t len;
 
 	pipe_child = 0;
 	gettoken(s, 0);
@@ -131,13 +132,18 @@ runit:
 		return;
 	}
 
+	nf_buf = argv[0];
+
 	// Clean up command line.
 	// Read all commands from the filesystem: add an initial '/' to
 	// the command name.
 	// This essentially acts like 'PATH=/'.
 	if (argv[0][0] != '/') {
-		argv0buf[0] = '/';
-		strcpy(argv0buf + 1, argv[0]);
+		strncpy(argv0buf, getcwd(), BUFSIZ - 1);
+		len = strnlen(argv0buf, BUFSIZ - 1);
+		if (len > 1)
+			strcat(argv0buf, "/");
+		strcat(argv0buf, argv[0]);
 		argv[0] = argv0buf;
 	}
 	argv[argc] = 0;
@@ -174,8 +180,40 @@ runit:
 	}
 
 	// Spawn the command!
-	if ((r = spawn(argv[0], (const char**) argv)) < 0)
-		cprintf("spawn %s: %i\n", argv[0], r);
+	if ((r = spawn(argv[0], (const char**) argv)) < 0) {
+		if (r == -E_NOT_FOUND) {
+			argv0buf[0] = '/';
+			strcpy(argv0buf + 1, nf_buf);
+			argv[0] = argv0buf;
+
+			if (!strncmp(argv[0], "/cd", BUFSIZ)) {
+				if (argc != 2) {
+					cprintf("Usage: cd PATH\n");
+					return;
+				}
+
+				if ((r = chdir(argv[1])) < 0) {
+					cprintf("cd: %i\n", r);
+				}
+
+				return;
+			}
+
+			if (!strncmp(argv[0], "/pwd", BUFSIZ)) {
+				if (argc != 1) {
+					cprintf("Usage: pwd\n");
+					return;
+				}
+
+				cprintf("%s\n", getcwd());
+				return;
+			}
+
+			if ((r = spawn(argv[0], (const char**) argv)) < 0) {
+				cprintf("spawn %s: %i\n", argv[0], r);
+			}
+		}
+	}
 
 	// In the parent, close all file descriptors and wait for the
 	// spawned command to exit.
