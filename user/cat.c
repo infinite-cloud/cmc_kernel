@@ -27,7 +27,7 @@ umain(int argc, char **argv)
 	else
 		for (i = 1; i < argc; i++) {
 			if (argv[i][0] != '/') {
-				strncpy(buf, getcwd(), 8192 - 1);
+				getcwd(buf);
 				len = strnlen(buf, 8192 - 1);
 				if (len > 1)
 					strcat(buf, "/");

@@ -21,7 +21,7 @@ int gettoken(char *s, char **token);
 void
 runcmd(char* s)
 {
-	char *argv[MAXARGS], *t, argv0buf[BUFSIZ], *nf_buf;
+	char *argv[MAXARGS], *t, argv0buf[BUFSIZ], *nf_buf, path[BUFSIZ];
 	int argc, c, i, r, p[2], fd, pipe_child;
 	size_t len;
 
@@ -139,7 +139,7 @@ runit:
 	// the command name.
 	// This essentially acts like 'PATH=/'.
 	if (argv[0][0] != '/') {
-		strncpy(argv0buf, getcwd(), BUFSIZ - 1);
+		getcwd(argv0buf);
 		len = strnlen(argv0buf, BUFSIZ - 1);
 		if (len > 1)
 			strcat(argv0buf, "/");
@@ -175,7 +175,8 @@ runit:
 			return;
 		}
 
-		cprintf("%s\n", getcwd());
+		getcwd(path);
+		cprintf("%s\n", path);
 		return;
 	}
 
@@ -205,7 +206,8 @@ runit:
 					return;
 				}
 
-				cprintf("%s\n", getcwd());
+				getcwd(path);
+				cprintf("%s\n", path);
 				return;
 			}
 

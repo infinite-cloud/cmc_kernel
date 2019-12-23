@@ -2,8 +2,6 @@
 #include <inc/path.h>
 #include <inc/lib.h>
 
-static char path[BUFSIZE];
-
 static int
 parse_path(char *parsed_path, const char *new_path)
 {
@@ -19,7 +17,7 @@ parse_path(char *parsed_path, const char *new_path)
 
 	if (new_path[0] != '/')
 	{
-		strncpy(parsed_path, getcwd(), BUFSIZE);
+		getcwd(parsed_path);
 		parsed_idx += strnlen(parsed_path, BUFSIZE);
 
 		if (strcmp(parsed_path, "/") || !strcmp(new_path, ".."))
@@ -124,10 +122,8 @@ chdir(const char *new_path)
 	return 0;
 }
 
-const char *
-getcwd(void)
+void
+getcwd(char *path)
 {
 	sys_getcwd(path);
-
-	return path;
 }

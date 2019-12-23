@@ -67,6 +67,7 @@ void
 umain(int argc, char **argv)
 {
 	int i;
+	char path[BUFSIZE];
 	struct Argstate args;
 
 	argstart(&argc, argv, &args);
@@ -81,8 +82,10 @@ umain(int argc, char **argv)
 			usage();
 		}
 
-	if (argc == 1)
-		ls(getcwd(), "");
+	if (argc == 1) {
+		getcwd(path);
+		ls(path, "");
+	}
 	else {
 		for (i = 1; i < argc; i++)
 			ls(argv[i], argv[i]);
