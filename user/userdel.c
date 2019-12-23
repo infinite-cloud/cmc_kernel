@@ -181,6 +181,8 @@ umain(int argc, char *argv[])
 			exit();
 		}
 
+		rm_dir = false;
+
 		/* Close everything */
 		close(fd);
 		close(fd_tmp);

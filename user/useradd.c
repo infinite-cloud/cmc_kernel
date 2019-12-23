@@ -121,7 +121,7 @@ umain(int argc, char *argv[])
 		exit();
 	}
 
-	if (!validate_member(home, ":/"))
+	if (!validate_member(home, ":"))
 	{
 		cprintf("Invalid home\n");
 		exit();

@@ -29,7 +29,10 @@ sum(const char *s, int n)
 int
 login_init(void)
 {
-	int i, fd, r;
+	int i, fd, r, c, newlines;
+	/* This buffer is used when we check whether a record
+	   already exists in the file or not */
+	char buf[BUFSIZE * 3];
 	/* The list of required directories and files */
 	const char *paths[] =
 	{
@@ -60,6 +63,16 @@ login_init(void)
 		"",
 		"",
 	};
+	const unsigned int members_nums[] =
+	{
+		0,
+		PASSWD_MEMBERS_NUM,
+		SHADOW_MEMBERS_NUM,
+		0,
+		0,
+		0,
+	};
+	const char *default_user_name = "user";
 
 	for (i = 0; i < sizeof(modes) / sizeof(modes[0]); i++)
 	{
@@ -74,7 +87,39 @@ login_init(void)
 		   the default data into it */
 		if (i == 1 || i == 2)
 		{
-			fd = open(paths[i], O_WRONLY);
+			fd = open(paths[i], O_RDWR);
+
+			/* Check whether such user already exists */
+			if ((r = find_record(fd, default_user_name, buf,
+				members_nums[i])) < 0 || r > 0)
+			{
+				close(fd);
+				return r;
+			}
+
+			/* Calculate the amount of lines in the file */
+			newlines = 0;
+
+			/* Go to the end of file... */
+			while ((r = read(fd, &c, sizeof(char))) > 0 || r < 0)
+			{
+				newlines = (c == '\n') ? newlines + 1 : newlines;
+
+				if (r < 0)
+				{
+					close(fd);
+					return r;
+				}
+			}
+
+			c = '\n';
+
+			/* ...and write a newline */
+			if (newlines > 0 && (r = write(fd, &c, sizeof(char))) < 0)
+			{
+				close(fd);
+				return r;
+			}
 
 			if ((r = write(fd, (const void *) default_user[i],
 				strlen(default_user[i]) * sizeof(char))) < 0)
