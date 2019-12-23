@@ -131,19 +131,6 @@ runit:
 		return;
 	}
 
-	if (!strncmp(argv[0], "cd", BUFSIZ)) {
-		if (argc != 2) {
-			cprintf("Usage: cd PATH\n");
-			return;
-		}
-
-		if ((r = chdir(argv[1])) < 0) {
-			cprintf("cd: %i\n", r);
-		}
-
-		return;
-	}
-
 	// Clean up command line.
 	// Read all commands from the filesystem: add an initial '/' to
 	// the command name.
@@ -161,6 +148,29 @@ runit:
 		for (i = 0; argv[i]; i++)
 			cprintf(" %s", argv[i]);
 		cprintf("\n");
+	}
+
+	if (!strncmp(argv[0], "/cd", BUFSIZ)) {
+		if (argc != 2) {
+			cprintf("Usage: cd PATH\n");
+			return;
+		}
+
+		if ((r = chdir(argv[1])) < 0) {
+			cprintf("cd: %i\n", r);
+		}
+
+		return;
+	}
+
+	if (!strncmp(argv[0], "/pwd", BUFSIZ)) {
+		if (argc != 1) {
+			cprintf("Usage: pwd\n");
+			return;
+		}
+
+		cprintf("%s\n", getcwd());
+		return;
 	}
 
 	// Spawn the command!
@@ -269,6 +279,40 @@ gettoken(char *s, char **p1)
 	return c;
 }
 
+int
+try_exit(const char *buf)
+{
+	int i;
+
+	i = 0;
+
+	while (i < BUFSIZ && strchr(WHITESPACE, buf[i])) {
+		i++;
+	}
+
+	if (i < BUFSIZ - 4 && !strncmp(&buf[i], "exit", 4)) {
+		i += 4;
+
+		if (buf[i] != '\0' && !strchr(WHITESPACE, buf[i++])) {
+			return 0;
+		}
+
+		while (i < BUFSIZ) {
+			if (buf[i] == '\0') {
+				break;
+			}
+
+			if (!strchr(WHITESPACE, buf[i++])) {
+				cprintf("Usage: exit\n");
+				return -1;
+			}
+		}
+
+		exit();
+	}
+
+	return 0;
+}
 
 void
 usage(void)
@@ -327,12 +371,8 @@ umain(int argc, char **argv)
 			continue;
 		if (echocmds)
 			printf("# %s\n", buf);
-		if (!strncmp(buf, "exit", BUFSIZ))
-			exit();
-		if (!strncmp(buf, "pwd", BUFSIZ)) {
-			printf("%s\n", getcwd());
+		if (try_exit(buf) < 0)
 			continue;
-		}
 		if (debug_var)
 			cprintf("BEFORE FORK\n");
 		if ((r = fork()) < 0)
