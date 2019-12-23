@@ -1,3 +1,5 @@
+/* Original copyright (C) 2010 by Creytiv.com. */
+
 #include <inc/stdio.h>
 #include <inc/string.h>
 #include <inc/sha.h>
@@ -7,12 +9,19 @@
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
 
+/*
+ * blk0() and blk() perform the initial exand
+ */
 #define blk0(i) (block->l[i] = (rol(block->l[i], 24) & 0xff00ff00) \
 	| (rol(block->l[i], 8) & 0x00ff00ff))
 #define blk(i) (block->l[i & 15] = rol(block->l[(i + 13) & 15] \
 	^ block->l[(i + 8) & 15] ^ block->l[(i + 2) & 15] \
 	^ block->l[i & 15], 1))
 
+/*
+ * (R0 + R1), R2, R3, R4 are the different operations
+ * used in SHA-1
+ */
 #define R0(v, w, x, y, z, i) \
 	z += ((w & (x ^ y)) ^ y) + blk0(i) + 0x5a827999 + rol(v, 5); \
 	w = rol(w, 30);
@@ -27,6 +36,9 @@
 #define R4(v, w, x, y, z, i) \
 	z += (w ^ x ^ y) + blk(i) + 0xca62c1d6 + rol(v, 5); w = rol(w, 30);
 
+/*
+ * Hash a single 512-bit block. This is the core of the algorithm.
+ */
 static void
 SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
 {
@@ -41,12 +53,14 @@ SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
 	block = (CHAR64LONG16 *) buffer;
 #endif
 
+	/* Copy context.state[] to the working variables */
 	a = state[0];
 	b = state[1];
 	c = state[2];
 	d = state[3];
 	e = state[4];
 
+	/* 4 rounds of 20 operations each. Loop unrolled */
 	R0(a, b, c, d, e, 0);
 	R0(e, a, b, c, d, 1);
 	R0(d, e, a, b, c, 2);
@@ -128,18 +142,24 @@ SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
 	R4(c, d, e, a, b, 78);
 	R4(b, c, d, e, a, 79);
 
+	/* Add the working variables back into context.state[] */
 	state[0] += a;
 	state[1] += b;
 	state[2] += c;
 	state[3] += d;
 	state[4] += e;
 
+	/* Wipe the variables */
 	a = b = c = d = e = 0;
 }
 
+/*
+ * Initialize new context
+ */
 void
 SHA1_Init(SHA1_CTX *context)
 {
+	/* SHA-1 initialization constants */
 	context->state[0] = 0x67452301;
 	context->state[1] = 0xefcdab89;
 	context->state[2] = 0x98badcfe;
@@ -148,6 +168,11 @@ SHA1_Init(SHA1_CTX *context)
 	context->count[0] = context->count[1] = 0;
 }
 
+/*
+ * The data should be run through this function.
+ * 'p' is a pointer to the buffer to run SHA-1 on,
+ * and 'len' is the number of bytes
+ */
 void
 SHA1_Update(SHA1_CTX *context, const void *p, size_t len)
 {
@@ -183,6 +208,9 @@ SHA1_Update(SHA1_CTX *context, const void *p, size_t len)
 	memcpy(&context->buffer[j], &data[i], len - i);
 }
 
+/*
+ * Add padding and return the message digest
+ */
 void
 SHA1_Final(uint8_t digest[SHA1_DIGEST_SIZE], SHA1_CTX *context)
 {
@@ -202,6 +230,7 @@ SHA1_Final(uint8_t digest[SHA1_DIGEST_SIZE], SHA1_CTX *context)
 		SHA1_Update(context, (uint8_t *) "\0", 1);
 	}
 
+	/* Should cause SHA1_Transform */
 	SHA1_Update(context, finalcount, 8);
 
 	for (i = 0; i < SHA1_DIGEST_SIZE; i++)
@@ -210,12 +239,15 @@ SHA1_Final(uint8_t digest[SHA1_DIGEST_SIZE], SHA1_CTX *context)
 			>> ((3 - (i & 3)) * 8)) & 255);
 	}
 
+	/* Wipe the variables */
 	i = 0;
 	memset(context->buffer, 0, 64);
 	memset(context->state, 0, 20);
 	memset(context->count, 0, 8);
+	/* SWR */
 	memset(finalcount, 0, 8);
 
+	/* Make SHA1_Transform overwrite its own static variables */
 #ifdef SHA1HANDSOFF
 	SHA1_Transform(context->state, context->buffer);
 #endif

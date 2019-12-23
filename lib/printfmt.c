@@ -38,6 +38,7 @@ static const char * const error_string[MAXERROR] =
 	[E_INVAL_PATH]	= "invalid path",
 	[E_NOT_A_DIR]	= "not a directory",
 	[E_INVAL_REC]	= "invalid user record",
+	[E_DMGD_FILE]	= "damaged file in /etc",
 };
 
 /*

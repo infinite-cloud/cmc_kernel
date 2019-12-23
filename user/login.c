@@ -1,25 +1,36 @@
 #include <inc/lib.h>
 #include <inc/time.h>
 
+/* The screen size. It is used by clear_scr() */
 #define CRT_ROWS 25
 #define CRT_COLS 80
 
+/*
+ * Clears the screen
+ */
 void
 clear_scr(void)
 {
 	int i;
 
+	/* Skip all rows */
 	for (i = 0; i < CRT_ROWS; i++)
 	{
 		cputchar('\n');
 	}
 
+	/* Go back to the beginning of a terminal screen */
 	for (i = 0; i < CRT_ROWS * CRT_COLS; i++)
 	{
 		cputchar('\b');
 	}
 }
 
+/*
+ * Checks whether the login credentials are valid and spawns the user-chosen
+ * shell if they are. Clears screen before entering a shell session
+ * and upon exiting it if 'clear' is set.
+ */
 int
 auth(const char *login, const char *password, bool clear)
 {
@@ -30,11 +41,13 @@ auth(const char *login, const char *password, bool clear)
 	struct Passwd passwd;
 	struct Shadow shadow;
 
+	/* Try to get the proper records from /etc/passwd and /etc/shadow,
+	   return if any errors occur */
 	if ((fd = open("/etc/passwd", O_RDONLY)) < 0)
 	{
 		return fd;
 	}
-	
+
 	if ((r0 = find_record(fd, login, passwd_record,
 		PASSWD_MEMBERS_NUM)) < 0)
 	{
@@ -57,15 +70,20 @@ auth(const char *login, const char *password, bool clear)
 
 	close(fd);
 
+	/* A record being present in one file but not in the other
+	   means that the files are not coherent, something must be broken */
 	if ((r == 0 && r0 > 0) || (r > 0 && r0 == 0))
 	{
 		return -1;
 	}
 
+	/* We have found nothing */
 	if (r == 0 && r0 == 0)
 	{
 		return 0;
 	}
+
+	/* Parse the records into the according structs */
 
 	if ((r = parse_into_passwd(passwd_record, &passwd)) < 0)
 	{
@@ -77,10 +95,14 @@ auth(const char *login, const char *password, bool clear)
 		return r;
 	}
 
+	/* Compute a hash for the password */
 	crypt(password, shadow.user_salt, buf);
 
+	/* The computed hash is equal to that stored in /etc/shadow,
+	   grant access */
 	if (!strncmp(buf, shadow.user_hash, BUFSIZE))
 	{
+		/* Set home directory */
 		if ((r = chdir(passwd.user_path)) < 0)
 		{
 			return r;
@@ -91,12 +113,14 @@ auth(const char *login, const char *password, bool clear)
 			clear_scr();
 		}
 
+		/* Begin a session with the user-chosen shell */
 		if ((r = spawnl(passwd.user_shell, passwd.user_shell + 1,
 			(char *) 0)) < 0)
 		{
 			return r;
 		}
 
+		/* Wait for the session to finish */
 		wait(r);
 
 		if (clear)
@@ -104,12 +128,17 @@ auth(const char *login, const char *password, bool clear)
 			clear_scr();
 		}
 
+		/* We are done, let init start the login sequence again */
 		exit();
 	}
 
+	/* Provided login credentials are incorrect */
 	return 1;
 }
 
+/*
+ * Prints the login prompt and reads login and password
+ */
 void 
 prompt(char *login, char *password)
 {
@@ -122,6 +151,7 @@ prompt(char *login, char *password)
 		login[BUFSIZE - 1] = '\0';
 	}
 
+	/* Don't print the password while it is being entered */
 	buf = readline_no_echo("password: ");
 	strncpy(password, buf, BUFSIZE);
 	password[BUFSIZE - 1] = '\0';
@@ -151,6 +181,7 @@ umain(int argc, char *argv[])
 	clear = false;
 	argstart(&argc, argv, &args);
 
+	/* Read args */
 	while ((r = argnext(&args)) >= 0)
 	{
 		switch(r)
@@ -164,19 +195,25 @@ umain(int argc, char *argv[])
 		}
 	}
 
+	/* Should have no more than two args upon reading '-c'
+	   (or not reading it at all) */
 	if (argc > 2)
 	{
 		usage();
 	}
+	/* The login was provided */
 	else if (argc == 2)
 	{
 		strncpy(login, argv[1], BUFSIZE);
 	}
 
+	/* Read login/password */
 	prompt(login, password);
 
+	/* Try to authenticate with the provided credentials */
 	if ((r = auth(login, password, clear)) < 0)
 	{
+		/* Something serious must have happened */
 		panic("login: auth: %i", r);
 	}
 	else if (r >= 0)
@@ -184,6 +221,9 @@ umain(int argc, char *argv[])
 		now = vsys_gettime();
 		cprintf("Login incorrect\n\n");
 
+		/* The credentials are incorrect,
+		   wait a second and pass the control
+		   back to the caller */
 		while (vsys_gettime() - now <= 1)
 		{
 		}

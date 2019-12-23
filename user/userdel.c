@@ -1,7 +1,12 @@
 #include <inc/lib.h>
 
+/* This buffer is used locally to simplify some interfaces */
 char buf[BUFSIZE];
 
+/*
+ * Read a record into 'record'
+ * from the file with a file descriptor 'fd'
+ */
 int
 read_line(int fd, char *record)
 {
@@ -26,6 +31,10 @@ read_line(int fd, char *record)
 	return r;
 }
 
+/*
+ * Extract a name from the record read
+ * from either /etc/passwd or /etc/shadow
+ */
 const char *
 get_name(const char *record)
 {
@@ -45,6 +54,11 @@ get_name(const char *record)
 	return buf;
 }
 
+/*
+ * Copy a file from 'fd_from' to 'fd_to', except for the record
+ * containing a name 'name'. Remove the home directory of
+ * the user with a name 'name' if 'rm_dir' is true
+ */
 int
 copy_file(int fd_from, int fd_to, const char *name, bool rm_dir)
 {
@@ -55,8 +69,11 @@ copy_file(int fd_from, int fd_to, const char *name, bool rm_dir)
 	do
 	{
 		r = read_line(fd_from, record);
+		/* Exit in the end of this iteration if the file ends */
 		eof = r;
 
+		/* If no errors occured and this is not a record of the user
+		   with a name 'name', copy this record */
 		if (r >= 0 && strncmp(name, get_name(record), BUFSIZE))
 		{
 			if ((r = write(fd_to, record,
@@ -65,6 +82,8 @@ copy_file(int fd_from, int fd_to, const char *name, bool rm_dir)
 				break;
 			}
 
+			/* Put a newline in the end so that the records can
+			   be distinguished from each other */
 			c = '\n';
 
 			if ((r = write(fd_to, &c, sizeof(char))) < 0)
@@ -72,6 +91,9 @@ copy_file(int fd_from, int fd_to, const char *name, bool rm_dir)
 				break;
 			}
 		}
+		/* This is a record of the user with a name 'name',
+		   don't copy it and delete their home directory
+		   if necessary */
 		else if (r >= 0 && rm_dir)
 		{
 			parse_into_passwd(record, &passwd);
@@ -114,6 +136,7 @@ umain(int argc, char *argv[])
 	rm_dir = false;
 	argstart(&argc, argv, &args);
 
+	/* Read args */
 	while ((r = argnext(&args)) >= 0)
 	{
 		switch(r)
@@ -127,6 +150,8 @@ umain(int argc, char *argv[])
 		}
 	}
 
+	/* Must have only two args upon reading '-d'
+	   (or not reading it at all)*/
 	if (argc != 2)
 	{
 		usage();
@@ -134,6 +159,7 @@ umain(int argc, char *argv[])
 
 	for (i = 0; i < sizeof(files) / sizeof(files[0]); i++)
 	{
+		/* Try to create a temporary file */
 		if ((fd_tmp = open("/tmp/userdel.tmp",
 			O_WRONLY | O_CREAT | O_TRUNC)) < 0)
 		{
@@ -141,21 +167,25 @@ umain(int argc, char *argv[])
 			exit();
 		}
 
+		/* Open the file we are copying from */
 		if ((fd = open(files[i], O_RDONLY)) < 0)
 		{
 			cprintf("userdel: open: %i\n", fd);
 			exit();
 		}
 
+		/* Copy into the temporary file */
 		if ((r = copy_file(fd, fd_tmp, argv[1], rm_dir)) < 0)
 		{
 			cprintf("userdel: copy_file: %i\n", r);
 			exit();
 		}
 
+		/* Close everything */
 		close(fd);
 		close(fd_tmp);
 
+		/* Now do it the other way around... */
 		if ((fd_tmp = open("/tmp/userdel.tmp", O_RDONLY)) < 0)
 		{
 			cprintf("userdel: open: %i\n", fd_tmp);
@@ -168,6 +198,7 @@ umain(int argc, char *argv[])
 			exit();
 		}
 
+		/* ...but ignore the line we are trying to delete */
 		if ((r = copy_file(fd_tmp, fd, "", false)) < 0)
 		{
 			cprintf("userdel: copy_file: %i\n", r);
@@ -178,6 +209,7 @@ umain(int argc, char *argv[])
 		close(fd_tmp);
 	}
 
+	/* Remove the temporary file */
 	if ((r = remove("/tmp/userdel.tmp")) < 0)
 	{
 		cprintf("userdel: remove: %i\n", r);

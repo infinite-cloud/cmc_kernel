@@ -19,10 +19,18 @@ sum(const char *s, int n)
 	return tot;
 }
 
+/*
+ * Initialize the files needed for performing
+ * an authentication by user/login.c.
+ * Returns:
+ * 	negative if an error occurs,
+ * 	zero otherwise.
+ */
 int
 login_init(void)
 {
 	int i, fd, r;
+	/* The list of required directories and files */
 	const char *paths[] =
 	{
 		"/etc",
@@ -32,6 +40,7 @@ login_init(void)
 		"/home/user",
 		"/tmp",
 	};
+	/* The corresponding open modes for them to be created */
 	const unsigned int modes[] =
 	{
 		O_CREAT | O_EXCL | O_MKDIR,
@@ -41,11 +50,12 @@ login_init(void)
 		O_CREAT | O_EXCL | O_MKDIR,
 		O_CREAT | O_EXCL | O_MKDIR,
 	};
+	/* Data for the default user. Salt/hash are pre-generated */
 	const char *default_user[] =
 	{
 		"",
 		"user:/home/user:/sh",
-		"user:osPUWC4ITJ92:m9NMSz2HozU1OYGKaaEWdydNVXEA",
+		"user:osPUWC4ITJ92:Db9/jDhgZhckg3TIcdOUOF9op5YA",
 		"",
 		"",
 		"",
@@ -53,11 +63,15 @@ login_init(void)
 
 	for (i = 0; i < sizeof(modes) / sizeof(modes[0]); i++)
 	{
+		/* Try to create a file. Return an error if it could not
+		   be created and it doesn't exist */
 		if ((r = open(paths[i], modes[i])) < 0 && r != -E_FILE_EXISTS)
 		{
 			return r;
 		}
 
+		/* If this is /etc/passwd or /etc/shadow, try to write
+		   the default data into it */
 		if (i == 1 || i == 2)
 		{
 			fd = open(paths[i], O_WRONLY);
@@ -115,6 +129,7 @@ umain(int argc, char **argv)
 		panic("first opencons used fd %d", r);
 	if ((r = dup(0, 1)) < 0)
 		panic("dup: %i", r);
+	// prepare for the login sequence
 	if ((r = login_init()) < 0)
 		panic("login_init: %i", r);
 	while (1) {

@@ -133,12 +133,15 @@ runit:
 		return;
 	}
 
+	// Save the current command in case we won't find it in the cwd
 	nf_buf = argv[0];
 
 	// Clean up command line.
 	// Read all commands from the filesystem: add an initial '/' to
 	// the command name.
 	// This essentially acts like 'PATH=/'.
+
+	// Write the cwd to argv0buf instead.
 	parse_path(argv0buf, argv[0]);
 	argv[0] = argv0buf;
 	argv[argc] = 0;
@@ -151,6 +154,7 @@ runit:
 		cprintf("\n");
 	}
 
+	// Change the directory and return if this is 'cd'
 	if (!strncmp(argv[0], "/cd", BUFSIZ)) {
 		if (argc != 2) {
 			cprintf("Usage: cd PATH\n");
@@ -164,6 +168,7 @@ runit:
 		return;
 	}
 
+	// Print the cwd and return if this is 'pwd'
 	if (!strncmp(argv[0], "/pwd", BUFSIZ)) {
 		if (argc != 1) {
 			cprintf("Usage: pwd\n");
@@ -175,9 +180,12 @@ runit:
 		return;
 	}
 
+	// Save the cwd to restore it in case of a context switch
 	getcwd(path);
 	// Spawn the command!
 	if ((r = spawn(argv[0], (const char**) argv)) < 0) {
+		// We haven't found the command in the cwd,
+		// look it up in the root directory
 		if (r == -E_NOT_FOUND) {
 			argv0buf[0] = '/';
 			strcpy(argv0buf + 1, nf_buf);
@@ -202,7 +210,6 @@ runit:
 					return;
 				}
 
-				getcwd(path);
 				cprintf("%s\n", path);
 				return;
 			}
@@ -220,6 +227,7 @@ runit:
 		if (debug_var)
 			cprintf("[%08x] WAIT %s %08x\n", thisenv->env_id, argv[0], r);
 		wait(r);
+		// The child has finished, we can restore the cwd now
 		chdir(path);
 		if (debug_var)
 			cprintf("[%08x] wait finished\n", thisenv->env_id);
@@ -316,6 +324,8 @@ gettoken(char *s, char **p1)
 	return c;
 }
 
+
+// Check if there is an 'exit' command in the buffer
 int
 try_exit(const char *buf)
 {
@@ -323,31 +333,40 @@ try_exit(const char *buf)
 
 	i = 0;
 
+	// Skip the whitespaces in the beginning
 	while (i < BUFSIZ && strchr(WHITESPACE, buf[i])) {
 		i++;
 	}
 
+	// Try to find an 'exit' sequence
 	if (i < BUFSIZ - 4 && !strncmp(&buf[i], "exit", 4)) {
 		i += 4;
 
+		// If 'exit' is followed by some non-whitespace symbol,
+		// it is some other command
 		if (buf[i] != '\0' && !strchr(WHITESPACE, buf[i++])) {
 			return 0;
 		}
 
+		// Skip the next set of whitespaces
 		while (i < BUFSIZ) {
+			// It is indeed an 'exit' without any arguments
 			if (buf[i] == '\0') {
 				break;
 			}
 
+			// It is 'exit', but it is followed by some arguments
 			if (!strchr(WHITESPACE, buf[i++])) {
 				cprintf("Usage: exit\n");
 				return -1;
 			}
 		}
 
+		// If this is just an 'exit', exit
 		exit();
 	}
 
+	// This was definitely not an 'exit' sequence, we have found nothing
 	return 0;
 }
 
@@ -408,6 +427,9 @@ umain(int argc, char **argv)
 			continue;
 		if (echocmds)
 			printf("# %s\n", buf);
+		// Check whether this is an 'exit' command and exit if it is
+		// before moving on to fork. If it is an 'exit' but followed by
+		// some arguments, try again
 		if (try_exit(buf) < 0)
 			continue;
 		if (debug_var)
