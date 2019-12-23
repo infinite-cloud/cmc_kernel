@@ -10,6 +10,12 @@ static const char encoding_table[] =
 	"abcdefghijklmnopqrstuvwxyz"
 	"0123456789+/";
 
+/*
+ * Takes a byte sequence 'in' 'in_len' bytes long and encodes it into
+ * a base-64 sequence 'out' using the encoding_table[] encoding table.
+ * 'out' should be at least 4 * (('in_len' + 2) / 2) bytes long.
+ * This value is written into 'out_len'.
+ */
 static void
 base64_encode(char *out, size_t *out_len, const uint8_t *in, size_t in_len)
 {
@@ -65,7 +71,7 @@ generate_salt(char *salt)
 
 	rand_init(0);
 	srand(vsys_gettime());
-	len = strlen(encoding_table) - 1;
+	len = strlen(encoding_table);
 
 	for (i = 0; i < SALT_LENGTH; i++)
 	{
