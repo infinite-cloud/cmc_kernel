@@ -175,6 +175,7 @@ runit:
 		return;
 	}
 
+	getcwd(path);
 	// Spawn the command!
 	if ((r = spawn(argv[0], (const char**) argv)) < 0) {
 		if (r == -E_NOT_FOUND) {
@@ -219,6 +220,7 @@ runit:
 		if (debug_var)
 			cprintf("[%08x] WAIT %s %08x\n", thisenv->env_id, argv[0], r);
 		wait(r);
+		chdir(path);
 		if (debug_var)
 			cprintf("[%08x] wait finished\n", thisenv->env_id);
 	}
