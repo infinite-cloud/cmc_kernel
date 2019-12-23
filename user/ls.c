@@ -82,7 +82,7 @@ umain(int argc, char **argv)
 		}
 
 	if (argc == 1)
-		ls("/", "");
+		ls(getcwd(), "");
 	else {
 		for (i = 1; i < argc; i++)
 			ls(argv[i], argv[i]);
