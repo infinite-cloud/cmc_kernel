@@ -19,12 +19,22 @@ void
 umain(int argc, char **argv)
 {
 	int f, i;
+	size_t len;
 
 	binaryname = "cat";
 	if (argc == 1)
 		cat(0, "<stdin>");
 	else
 		for (i = 1; i < argc; i++) {
+			if (argv[i][0] != '/') {
+				strncpy(buf, getcwd(), 8192 - 1);
+				len = strnlen(buf, 8192 - 1);
+				if (len > 1)
+					strcat(buf, "/");
+				strcat(buf, argv[i]);
+				argv[i] = buf;
+			}
+
 			f = open(argv[i], O_RDONLY);
 			if (f < 0)
 				printf("can't open %s: %i\n", argv[i], f);
