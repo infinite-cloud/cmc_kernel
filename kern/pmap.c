@@ -30,8 +30,8 @@ pde_t *kern_pgdir;		// Kernel's initial page directory
 struct PageInfo *pages;		// Physical page state array
 static struct PageInfo *page_free_list;	// Free list of physical pages
 struct PageInfo *page_free_list_top;
-char *cwd;
-size_t cwd_len;
+char *cwd;			// Current working directory path
+size_t cwd_len;			// Current working directory path's length
 
 // This variable is used by user_mem_assert() and
 // user_mem_check()
@@ -206,6 +206,9 @@ mem_init(void)
 	memset(vsys, 0, NVSYSCALLS * sizeof(int));
 
 
+	//////////////////////////////////////////////////////////////////////
+	// Make 'cwd' point to an array of size 'NCWD' of char.
+	// Initialize it with root directory '/'.
 	cwd = (char *)
 		boot_alloc(NCWD * sizeof(char));
 	memset(cwd, '/', sizeof(char));
@@ -260,6 +263,12 @@ mem_init(void)
 		ROUNDUP(NVSYSCALLS * sizeof(int), PGSIZE),
 		PADDR(vsys), PTE_U | PTE_P);
 
+	//////////////////////////////////////////////////////////////////////
+	// Map the 'cwd' array read-only by the user at linear address UCWD
+	// (ie. perm = PTE_U | PTE_P).
+	// Permissions:
+	// 	- the new image at UCWD -- kernel R, user R
+	// 	- Path itself -- kernel RW, user NONE
 	boot_map_region(kern_pgdir, UCWD,
 		ROUNDUP(NCWD * sizeof(char), PGSIZE),
 		PADDR(cwd), PTE_U | PTE_P);

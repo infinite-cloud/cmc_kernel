@@ -2,7 +2,7 @@
 #include <inc/memlayout.h>
 
 .data
-// Define the global symbols 'envs', 'pages', 'vsys', 'uvpt', and 'uvpd'
+// Define the global symbols 'envs', 'pages', 'vsys', 'cwd', 'uvpt', and 'uvpd'
 // so that they can be used in C as if they were ordinary global arrays.
 // LAB 12: Your code here.
 	.globl envs
