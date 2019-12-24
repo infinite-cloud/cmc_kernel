@@ -2,7 +2,7 @@
 
 /* These are the default values that we use if no args are provided */
 #define DEFAULT_USER "user"
-#define DEFAULT_PASSWORD "password"
+#define DEFAULT_PASSWORD ""
 #define DEFAULT_HOME "/home/user"
 #define DEFAULT_SHELL "/sh"
 

@@ -39,6 +39,8 @@ LIB_SRCFILES :=		$(LIB_SRCFILES) \
 			lib/crypt.c \
 			lib/sha1.c \
 			lib/hmac_sha1.c \
+			lib/sha256.c \
+			lib/hmac_sha256.c \
 
 
 LIB_OBJFILES := $(patsubst lib/%.c, $(OBJDIR)/lib/%.o, $(LIB_SRCFILES))

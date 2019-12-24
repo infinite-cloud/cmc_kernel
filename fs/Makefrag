@@ -35,6 +35,7 @@ USERAPPS :=		$(OBJDIR)/user/init \
 			$(OBJDIR)/user/login \
 			$(OBJDIR)/user/useradd \
 			$(OBJDIR)/user/userdel \
+			$(OBJDIR)/user/rm \
 
 
 FSIMGFILES := $(FSIMGTXTFILES) $(USERAPPS)

@@ -95,6 +95,13 @@ auth(const char *login, const char *password, bool clear)
 		return r;
 	}
 
+	/* Check whether the stored password was empty.
+	   If it was, deny access */
+	if (shadow.user_hash[0] == '\0')
+	{
+		return 1;
+	}
+
 	/* Compute a hash for the password */
 	crypt(password, shadow.user_salt, buf);
 
@@ -102,6 +109,10 @@ auth(const char *login, const char *password, bool clear)
 	   grant access */
 	if (!strncmp(buf, shadow.user_hash, BUFSIZE))
 	{
+		/* Access will be granted, reset the current amount
+		   of login attempts */
+		sys_set_logatt(0);
+
 		/* Set home directory */
 		if ((r = chdir(passwd.user_path)) < 0)
 		{
@@ -147,6 +158,12 @@ prompt(char *login, char *password)
 	if (login[0] == '\0')
 	{
 		buf = readline("login: ");
+
+		if (buf[0] == '\0')
+		{
+			exit();
+		}
+
 		strncpy(login, buf, BUFSIZE);
 		login[BUFSIZE - 1] = '\0';
 	}
@@ -168,6 +185,7 @@ void
 umain(int argc, char *argv[])
 {
 	int i, r, now;
+	unsigned int login_attempts;
 	bool clear;
 	char login[BUFSIZE], password[BUFSIZE];
 	struct Argstate args;
@@ -218,15 +236,29 @@ umain(int argc, char *argv[])
 	}
 	else if (r >= 0)
 	{
+		/* If the authentication was unsuccessful,
+		   increase the current amount of login attempts,
+		   so that the delay will increase as the
+		   unsuccessful attempts continue */
+
+		/* Initialize 'login_attempts' just in case */
+		login_attempts = 0;
+		/* Get the current amount of login attempts */
+		sys_get_logatt(&login_attempts);
+		/* Increase the current amount of login attempts exponentially,
+		   thus making brute forcing inefficient */
+		sys_set_logatt(1 + login_attempts * login_attempts);
 		now = vsys_gettime();
+
+		/* Wait for 'login_attempts' seconds */
+		while (vsys_gettime() - now <= login_attempts)
+		{
+		}
+
 		cprintf("Login incorrect\n\n");
 
 		/* The credentials are incorrect,
-		   wait a second and pass the control
-		   back to the caller */
-		while (vsys_gettime() - now <= 1)
-		{
-		}
+		   pass the control back to the caller */
 
 		exit();
 	}

@@ -32,6 +32,7 @@ static struct PageInfo *page_free_list;	// Free list of physical pages
 struct PageInfo *page_free_list_top;
 char *cwd;			// Current working directory path
 size_t cwd_len;			// Current working directory path's length
+unsigned login_attempts;
 
 // This variable is used by user_mem_assert() and
 // user_mem_check()

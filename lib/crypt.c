@@ -1,7 +1,7 @@
 #include <inc/lib.h>
 #include <inc/pbkdf2.h>
-#include <inc/hmac.h>
 #include <inc/random.h>
+#include <inc/hmac256.h>
 
 #define PBKDF2_ITERATIONS 1000
 
@@ -49,18 +49,24 @@ void
 crypt(const char *password, const char *salt, char *hash)
 {
 	size_t hash_len;
-	uint8_t buf[HASH_LENGTH + 2 * SHA_DIGEST_LENGTH];
+	uint8_t buf[HASH_LENGTH + 2 * HMAC_SHA256_BYTES];
 	uint8_t derived_key[HASH_LENGTH];
 
-	pbkdf2(hmac_sha1, SHA_DIGEST_LENGTH,
-		(const void *) password, strnlen(password, BUFSIZE),
-		(const void *) salt, SALT_LENGTH,
-		PBKDF2_ITERATIONS,
-		(void *) derived_key, HASH_LENGTH,
-		(void *) buf);
-
 	hash_len = 0;
-	base64_encode(hash, &hash_len, derived_key, HASH_LENGTH);
+
+	/* An empty password should have an empty hash */
+	if (password[0] != '\0')
+	{
+		pbkdf2(hmac_sha256, HMAC_SHA256_BYTES,
+			(const void *) password, strnlen(password, BUFSIZE),
+			(const void *) salt, SALT_LENGTH,
+			PBKDF2_ITERATIONS,
+			(void *) derived_key, HASH_LENGTH,
+			(void *) buf);
+
+		base64_encode(hash, &hash_len, derived_key, HASH_LENGTH);
+	}
+
 	hash[hash_len] = '\0';
 }
 

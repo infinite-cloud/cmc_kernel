@@ -58,7 +58,7 @@ login_init(void)
 	{
 		"",
 		"user:/home/user:/sh",
-		"user:osPUWC4ITJ92:Db9/jDhgZhckg3TIcdOUOF9op5YA",
+		"user:osPUWC4ITJ92:ePZ4r3yA0yvXZefQh/TPlWesg3oM2WNtjYmnHJczn7sA",
 		"",
 		"",
 		"",

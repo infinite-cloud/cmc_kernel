@@ -3,7 +3,7 @@
 #ifndef CRYPT_H
 #define CRYPT_H
 
-#define HASH_LENGTH SHA_DIGEST_LENGTH
+#define HASH_LENGTH HMAC_SHA256_BYTES
 #define SALT_LENGTH 12
 
 /*

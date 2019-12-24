@@ -136,3 +136,13 @@ int sys_getcwd(char *dir)
 {
 	return syscall(SYS_getcwd, 0, (uint32_t) dir, 0, 0, 0, 0);
 }
+
+int sys_set_logatt(unsigned attempts)
+{
+	return syscall(SYS_set_logatt, 0, (uint32_t) attempts, 0, 0, 0, 0);
+}
+
+int sys_get_logatt(unsigned *attempts)
+{
+	return syscall(SYS_get_logatt, 0, (uint32_t) attempts, 0, 0, 0, 0);
+}

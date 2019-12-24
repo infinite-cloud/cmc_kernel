@@ -14,6 +14,9 @@
 #include <kern/sched.h>
 #include <kern/kclock.h>
 
+// This is the current amount of login attempts
+extern unsigned login_attempts;
+
 // Print a string to the system console.
 // The string is exactly 'len' characters long.
 // Destroys the environment on memory errors.
@@ -514,6 +517,10 @@ sys_gettime(void)
 	return gettime();
 }
 
+// Change the current working directory.
+// 'buf' should be a null-terminated character string no more
+// than BUFSIZE bytes long.
+// 'len' should be strlen(dir) + 1.
 static int
 sys_chdir(const char *dir, size_t len)
 {
@@ -524,31 +531,57 @@ sys_chdir(const char *dir, size_t len)
 		return -E_INVAL;
 	}
 
+	// Check whether we can read 'len' bytes from 'dir'
 	user_mem_assert(curenv, (const void *) dir, len, PTE_U);
 
+	// Change the directory
 	for (i = 0; i < len; i++)
 	{
 		cwd[i] = dir[i];
 	}
 
+	// Set the new cwd length.
 	cwd_len = len;
 
 	return 0;
 }
 
+// Read the current working directory into the buffer pointed to by
+// 'dir'.
+// 'dir' should point to a buffer at least BUFSIZE bytes long.
 static int
 sys_getcwd(char *dir)
 {
 	size_t i;
 
+	// Check whether we can write 'cwd_len' bytes into 'dir'
 	user_mem_assert(curenv, (const void *) dir, cwd_len, PTE_U | PTE_W);
 
+	// Write the directory into the buffer
 	for (i = 0; i < cwd_len; i++)
 	{
 		dir[i] = cwd[i];
 	}
 
 	return 0;
+}
+
+// Set the current amount of login attempts.
+static void
+sys_set_logatt(unsigned attempts)
+{
+	login_attempts = attempts;
+}
+
+// Get the current amount of login attempts.
+static void
+sys_get_logatt(unsigned *attempts)
+{
+	// Check whether we can write an unsigned int into 'attempts'
+	user_mem_assert(curenv, (const void *) attempts, sizeof(unsigned),
+		PTE_U | PTE_W);
+
+	*attempts = login_attempts;
 }
 
 // Dispatches to the correct kernel function, passing the arguments.
@@ -601,6 +634,12 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 			return sys_chdir((const char *) a1, (size_t) a2);
 		case SYS_getcwd:
 			return sys_getcwd((char *) a1);
+		case SYS_set_logatt:
+			sys_set_logatt((unsigned) a1);
+			return 0;
+		case SYS_get_logatt:
+			sys_get_logatt((unsigned *) a1);
+			return 0;
 		default:
 			return -E_INVAL;
 	}

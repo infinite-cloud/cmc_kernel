@@ -20,6 +20,8 @@ enum {
 	SYS_gettime,
 	SYS_chdir,
 	SYS_getcwd,
+	SYS_set_logatt,
+	SYS_get_logatt,
 	NSYSCALLS
 };
 
